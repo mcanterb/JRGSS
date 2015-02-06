@@ -19,7 +19,7 @@ import java.nio.ByteOrder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class Color implements Serializable{
+public class Color implements Serializable,Cloneable{
     int red=0,green=0,blue=0,alpha=0;
 
     public Color(int packed) {
@@ -74,5 +74,13 @@ public class Color implements Serializable{
         packed |= (green<<16);
         packed |= (red<<24);
         return packed;
+    }
+
+    public Color clone() {
+        return new Color(red, green, blue, alpha);
+    }
+
+    protected com.badlogic.gdx.graphics.Color toGDX() {
+        return new com.badlogic.gdx.graphics.Color(red/255f, green/255f, blue/255f, alpha/255f);
     }
 }

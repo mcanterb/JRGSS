@@ -12,10 +12,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.jrgss.JRGSSApplication;
 import org.jrgss.JRGSSApplicationListener;
 import org.jrgss.api.*;
+import org.jrgss.api.Graphics;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
+import org.lwjgl.input.*;
 import org.lwjgl.opengl.Display;
 
+import javax.swing.*;
 import java.awt.*;
+import java.nio.IntBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,9 +89,15 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
     @Override
     void mainLoop() {
         Array<LifecycleListener> lifecycleListeners = this.lifecycleListeners;
+        while(jrgssApplicationListener == null) {
+            try{
+                Thread.sleep(1);
+            }catch (InterruptedException e){}
+        }
         jrgssApplicationListener.loadScripts();
         try {
             graphics.setupDisplay();
+            Graphics.init();
         } catch (LWJGLException e) {
             throw new GdxRuntimeException(e);
         }
@@ -102,7 +113,12 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
         wasActive = true;
         audioUpdateThread.setDaemon(true);
         audioUpdateThread.start();
-        jrgssApplicationListener.getMain().main();
+        try{
+            jrgssApplicationListener.getMain().main();
+        }catch(Exception e) {
+            JOptionPane.showMessageDialog(Display.getParent(), "Unexpected Error: "+e.getMessage(), "Error",JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace(System.err);
+        }
 
         synchronized (lifecycleListeners) {
             for (LifecycleListener listener : lifecycleListeners) {
@@ -146,7 +162,7 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
     public void handlePlatform() {
         Display.processMessages();
         if (Display.isCloseRequested()) exit();
-
+        hideMouse();
         boolean isActive = Display.isActive();
         if (wasActive && !isActive) { // if it's just recently minimized from active state
             wasActive = false;
@@ -212,5 +228,27 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
             if (frameRate == 0) frameRate = 30;
         }
         if (frameRate > 0) Display.sync(frameRate);
+
+    }
+
+    private org.lwjgl.input.Cursor emptyCursor;
+
+    private void hideMouse() {
+        try{
+            if (emptyCursor == null) {
+                if (Mouse.isCreated()) {
+                    int min = org.lwjgl.input.Cursor.getMinCursorSize();
+                    IntBuffer tmp = BufferUtils.createIntBuffer(min * min);
+                    emptyCursor = new org.lwjgl.input.Cursor(min, min, min / 2, min / 2, 1, tmp, null);
+                } else {
+                    throw new LWJGLException(
+                            "Could not create empty cursor before Mouse object is created");
+                }
+            }
+            if (Mouse.isInsideWindow())
+                Mouse.setNativeCursor(emptyCursor);
+        }catch (LWJGLException e) {
+            //We'll ignore this for now...
+        }
     }
 }

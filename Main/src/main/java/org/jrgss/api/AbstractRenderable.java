@@ -20,6 +20,8 @@ public abstract class AbstractRenderable implements Comparable<AbstractRenderabl
     private static long counter = 0;
     @Getter
     protected long creationTime;
+    @Getter
+    protected boolean disposed = false;
 
     public AbstractRenderable() {
         synchronized (AbstractRenderable.class) {
@@ -38,6 +40,7 @@ public abstract class AbstractRenderable implements Comparable<AbstractRenderabl
 
     public synchronized void dispose() {
         renderQueue.remove(this);
+        this.disposed = true;
     }
 
     public abstract void render(SpriteBatch batch);
@@ -47,16 +50,8 @@ public abstract class AbstractRenderable implements Comparable<AbstractRenderabl
         Viewport otherVP = other.getViewport();
         Viewport vp = getViewport();
 
-        if(other instanceof Window && !(this instanceof Window)) {
-            return -1;
-        }
-        if((this instanceof Window) && !(other instanceof Window)) {
-            return 1;
-        }
 
         int ret = Integer.compare(vp.getZ(), otherVP.getZ());
-        if(ret != 0) return ret;
-        ret = Long.compare(vp.getCreationTime(), otherVP.getCreationTime());
         if(ret != 0) return ret;
 
         ret = Integer.compare(getZ(), other.getZ());

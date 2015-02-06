@@ -20,13 +20,17 @@ import java.nio.ByteOrder;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Tone implements Serializable {
-    int red;
-    int green;
-    int blue;
-    int gray;
+    float red;
+    float green;
+    float blue;
+    float gray;
 
     public Tone(int red, int green, int blue) {
         this(red, green, blue, 0);
+    }
+
+    public boolean isZero() {
+        return red == 0 && green == 0 && blue == 0 && gray == 0;
     }
 
     public static Tone _load(RubyString rubyString) {
@@ -51,11 +55,16 @@ public class Tone implements Serializable {
         return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), buffer.array());
     }
 
-    public void set(int red, int green, int blue) {
+    public void setRed(float red) {
+
+        this.red = red;
+    }
+
+    public void set(float red, float green, float blue) {
         set(red, green, blue, this.gray);
     }
 
-    public void set(int red, int green, int blue, int gray) {
+    public void set(float red, float green, float blue, float gray) {
         this.red = red;
         this.green = green;
         this.blue = blue;
@@ -71,6 +80,10 @@ public class Tone implements Serializable {
 
     public Tone clone() {
         return new Tone(red, green, blue, gray);
+    }
+
+    public String inspect() {
+        return toString();
     }
 
 

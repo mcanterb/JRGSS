@@ -2,9 +2,14 @@ package org.jrgss;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerListener;
+import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector3;
 import org.jrgss.api.*;
 import org.jrgss.rgssa.EncryptedArchive;
 import org.jruby.*;
@@ -15,6 +20,7 @@ import org.jruby.runtime.ThreadContext;
 
 import javax.swing.*;
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -25,14 +31,13 @@ public class JRGSSGame implements JRGSSApplicationListener {
     ScriptingContainer scriptingContainer;
     final String[] BUILTINS = new String[] {
             "Audio", "Bitmap", "Color", "Font", "Graphics",
-            "Input", "Plane", "Rect", "RGSSError", "Sprite",
-            "Tilemap", "Tone", "Viewport", "Window",
-            "Win32API"
+            "Plane", "Rect", "RGSSError", "Sprite",
+            "Tilemap", "Tone", "Viewport", "Window"
     };
     public static final Queue<FutureTask<?>> glRunnables = new ConcurrentLinkedQueue<>();
 
     static JRGSSMain mainBlock;
-    public static String JRGSS_DIR = "/Users/matt/Downloads/JRGSS/Main";
+    static String JRGSS_DIR;
     SpriteBatch batch;
     public static OrthographicCamera camera;
     FPSLogger fpsLogger;
@@ -43,9 +48,10 @@ public class JRGSSGame implements JRGSSApplicationListener {
         return Thread.currentThread() == glThread;
     }
 
-    public JRGSSGame(String gameDirectory, String rtpDirectory, ConfigReader ini) {
+    public JRGSSGame(String gameDirectory, String rtpDirectory, String jrgssDir, ConfigReader ini) {
         super();
-        JRGSSGame.ini = ini;
+        JRGSSGame.ini = ini; //Pretty shitty, but JRGSSGame should be a singleton
+        JRGSSGame.JRGSS_DIR = jrgssDir;
         RGSSVersion rgss = ini.getRGSSVersion();
         if(rgss != RGSSVersion.VXAce) {
             int result = JOptionPane.showConfirmDialog(null, "This game uses an unsupported version of RGSS. This game is for "+
@@ -71,6 +77,24 @@ public class JRGSSGame implements JRGSSApplicationListener {
 
     }
 
+    public void loadScriptsFromDirectory(String path) {
+        File[] fileList = new File(path).listFiles();
+        File[] orderedList = new File[fileList.length];
+        for(File f : fileList) {
+            String fileName = f.getName();
+            String[] nameParts = fileName.split("@@__@@");
+            orderedList[Integer.parseInt(nameParts[0])] = f;
+        }
+
+        for(File f : orderedList) {
+            try{
+                scriptingContainer.runScriptlet(new FileReader(f),f.getName().split("@@__@@")[1]);
+            }catch(Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public void loadScriptData(String path) {
         FileHandle f;
         if(FileUtil.archive != null) {
@@ -94,9 +118,9 @@ public class JRGSSGame implements JRGSSApplicationListener {
             scriptingContainer.put("$__obj", item);
             String str2 = (String)scriptingContainer.runScriptlet("Zlib::Inflate.inflate($__obj[2]).force_encoding(\"utf-8\")");
             try{
-                String script = str2;
-                try(FileWriter writer = new FileWriter("/Users/matt/monsters/"+index+" - "+name+".rb")) {
-                    writer.write(script);
+                String script = str2.replaceAll("\r\n","\n");
+                try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
+                    writer.write("# encoding: UTF-8\n" + script);
                 }
                 scriptingContainer.setScriptFilename(name);
                 scriptingContainer.runScriptlet("# encoding: UTF-8\n" + script);
@@ -131,21 +155,28 @@ public class JRGSSGame implements JRGSSApplicationListener {
         scriptingContainer.runScriptlet("class "+name+"\ndef _dump level\nself.dump\nend\nend");
     }
 
+
+
     @Override
     public void create() {
         glThread = Thread.currentThread();
 
-        camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camera.setToOrtho(true, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        camera = new OrthographicCamera(Graphics.getWidth(), Graphics.getHeight());
+        camera.setToOrtho(true, Graphics.getWidth(), Graphics.getHeight());
+        camera.update();
         fpsLogger = new FPSLogger();
         Gdx.graphics.setVSync(true);
         batch = new SpriteBatch();
         batch.enableBlending();
+       // Graphics.initialize();
+
     }
 
     @Override
     public void resize(int width, int height) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        camera = new OrthographicCamera(Graphics.getWidth(), Graphics.getHeight());
+        camera.setToOrtho(true, Graphics.getWidth(), Graphics.getHeight());
+        camera.update();
     }
 
     @Override
@@ -184,52 +215,47 @@ public class JRGSSGame implements JRGSSApplicationListener {
         }
     }
 
+    DebugFrame debugFrame = new DebugFrame();
+    boolean buttonTrigger = false;
+
     public void update() {
 
-        if(Gdx.input.isKeyPressed(Input.Keys.F1)) {
-            ArrayList<AbstractRenderable> renderables = new ArrayList<>();
-            ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
-            for(AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
-                if(renderable.getViewport() == null) {
-                    viewportLessRenderables.add(renderable);
-                } else {
-                    renderables.add(renderable);
-                }
-            }
-            Collections.sort(renderables);
-            Collections.sort(viewportLessRenderables, Graphics.alternateComparator);
-            Iterator<AbstractRenderable> iter = viewportLessRenderables.iterator();
-            for (AbstractRenderable renderable : renderables) {
+        if(!buttonTrigger && Gdx.input.isKeyPressed(Input.Keys.F1)) {
 
-                AbstractRenderable r;
-                while(iter.hasNext() && Graphics.alternateComparator.compare((r = iter.next()), renderable) < 0) {
-                    System.out.println(String.format("%s: %s, %d, %d, %d ", r.getClass().getSimpleName(), r.getViewport(), r.getZ(), r.getY(), r.getCreationTime()) );
-                    if(renderable instanceof Window && ((Window) renderable).getContents().getPath() != null) {
-                        System.out.println(String.format("Window has %s, %d", ((Window) renderable).isVisible(), ((Window) renderable).getOpenness()));
-                    }
-                }
-                System.out.println(String.format("%s: %s, %d, %d, %d ", renderable.getClass().getSimpleName(), renderable.getViewport(), renderable.getZ(), renderable.getY(), renderable.getCreationTime()) );
-                if(renderable instanceof Window && ((Window) renderable).getContents().getPath() != null) {
-                    System.out.println(String.format("Window has %s, %d", ((Window) renderable).isVisible(), ((Window) renderable).getOpenness()));
-                }
-            }
-            while(iter.hasNext()) {
-                AbstractRenderable renderable = iter.next();
-                System.out.println(String.format("%s: %s, %d, %d, %d ", renderable.getClass().getSimpleName(), renderable.getViewport(), renderable.getZ(), renderable.getY(), renderable.getCreationTime()));
-                if(renderable instanceof Window && ((Window) renderable).getContents().getPath() != null) {
-                    System.out.println(String.format("Window has %s, %d", ((Window) renderable).isVisible(), ((Window) renderable).getOpenness()));
-                }
-
-            }
-
+            debugFrame.refresh();
+            buttonTrigger = true;
         }
+        if(buttonTrigger && !Gdx.input.isKeyPressed(Input.Keys.F1)) {
+            buttonTrigger = false;
+        }
+
+        if(!override && Gdx.input.isKeyPressed(Input.Keys.F2)) {
+            String script = "npc1 = :Etel\n" +
+                    "npc2 = :Elek\n" +
+                    "npc3 = :Dorottya\n" +
+                    "#END TEST SECTION\n" +
+                    "$game_variables[138] = $npc_hash[npc1].actor_id\n" +
+                    "$game_variables[139] = $npc_hash[npc2].actor_id\n" +
+                    "$game_variables[140] = $npc_hash[npc3].actor_id\n" +
+                    "$npc_hash[npc1].grave_location = [21,11]\n" +
+                    "$npc_hash[npc2].grave_location = [24,9]\n" +
+                    "$npc_hash[npc3].grave_location = [11,9]\n" +
+                    "$npc_hash[npc1].kill\n" +
+                    "$npc_hash[npc2].kill\n" +
+                    "$npc_hash[npc3].kill";
+            scriptingContainer.runScriptlet(script);
+            override = true;
+        }
+
     }
+
+    static boolean override = false;
 
     @Override
     public void loadScripts() {
         scriptingContainer = new ScriptingContainer(LocalContextScope.SINGLETON, LocalVariableBehavior.PERSISTENT);
         scriptingContainer.setCompatVersion(CompatVersion.RUBY1_9);
-        scriptingContainer.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+        scriptingContainer.setCompileMode(RubyInstanceConfig.CompileMode.JIT);
         scriptingContainer.setRunRubyInProcess(true);
         scriptingContainer.runScriptlet("$TEST=true");
         scriptingContainer.runScriptlet("require 'java'");
@@ -241,6 +267,8 @@ public class JRGSSGame implements JRGSSApplicationListener {
         loadRPGModule();
         scriptingContainer.put("$_jrgss_home", FileUtil.gameDirectory);
         loadScriptData(ini.getScripts());
+        //loadScriptsFromDirectory("/Users/matt/VidarScripts");
+        //Gdx.app.log("JRGSSGame", scriptingContainer.runScriptlet("load_data(\"Data/Map101.rvdata2\")").toString());
     }
 
     @Override

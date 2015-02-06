@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.ToString;
+import org.jrgss.shaders.ToneShaderProgram;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 
@@ -133,7 +135,7 @@ public class Tilemap {
     TileMapLayer layers[] = new TileMapLayer[6];
 
     public Tilemap() {
-        this(new Viewport());
+        this(null);
     }
 
     public Tilemap(Viewport viewport) {
@@ -146,7 +148,7 @@ public class Tilemap {
         batch = new SpriteBatch();
         batch.enableBlending();
         OrthographicCamera camera = new OrthographicCamera();
-        camera.setToOrtho(true, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        camera.setToOrtho(true, Graphics.getWidth(), Graphics.getHeight());
         batch.setProjectionMatrix(camera.combined);
 
         for(int i = 0; i < 6; i++) {
@@ -439,11 +441,11 @@ public class Tilemap {
         public int getZ() {
             switch (layer) {
                 case 0:
-                    return 0;
+                    return -2;
                 case 1:
-                    return 1;
+                    return -1;
                 case 2:
-                    return 3;
+                    return 0;
                 case 3:
                     return 200;
                 case 4:
@@ -463,6 +465,10 @@ public class Tilemap {
         @Override
         public int getY() {
             return 0;
+        }
+
+        public String toString() {
+            return "Tilemap(layer="+layer+", "+viewport.toString()+")";
         }
     }
 

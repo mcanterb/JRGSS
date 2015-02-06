@@ -18,7 +18,7 @@ import java.io.File;
 @Data
 public class FileUtil {
 
-    final static String[] IMG_EXTENSIONS = new String[] {".bmp", ".png", ".jpg", ".jpeg"};
+    final static String[] IMG_EXTENSIONS = new String[] {".bmp", ".png", ".jpg", ".jpeg", ".jpg.png"};
     final static String[] AUDIO_EXTENSIONS = new String[] {".ogg",".ogx", ".wav", ".mp3"};
     static EncryptedArchive archive = null;
     public static String gameDirectory = null;
@@ -55,7 +55,6 @@ public class FileUtil {
         for(String ext : extensions) {
             File f = new File(gameDirectory+File.separator+path + ext);
             if(f.exists()) {
-                Gdx.app.log("FileUtil","Found "+gameDirectory+File.separator+path+ext+" in Game folder.");
                 return new FileHandle(f);
             }
         }
@@ -65,7 +64,7 @@ public class FileUtil {
                 if(f.exists()) return new FileHandle(f);
             }
         }
-
+        Gdx.app.log("FileUtil", "Tried to open "+path+" and failed.");
         return null;
     }
 
@@ -73,9 +72,7 @@ public class FileUtil {
         path = path.replaceAll("\\\\", "/");
         if(archive != null) {
             String convertedPath = path.replaceAll("\\/", "\\\\");
-            Gdx.app.log("FileUtil","Looking in archive for "+convertedPath);
             FileHandle f = archive.openFile(convertedPath);
-            Gdx.app.log("FileUtil","f is "+f);
             if( f != null) return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), f.readBytes());
         }
         File f = new File(gameDirectory + File.separator +path.replaceAll("\\\\", File.separator));

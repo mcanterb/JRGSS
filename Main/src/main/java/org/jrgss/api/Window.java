@@ -192,6 +192,7 @@ public class Window extends AbstractRenderable {
     public void render(SpriteBatch _) {
         if (!visible || isClose() || (viewport != null && !viewport.isVisible())) return;
         //Gdx.app.log("Window", "Drawing a window!");
+        batch.setProjectionMatrix(JRGSSGame.camera.combined);
         batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         batch.enableBlending();
 

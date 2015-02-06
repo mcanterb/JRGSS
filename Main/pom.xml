@@ -12,7 +12,7 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -22,12 +22,12 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-sources</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
-            <version>1.7.13</version>
+            <version>1.7.19</version>
         </dependency>
         <dependency>
             <groupId>org.ini4j</groupId>
@@ -37,7 +37,12 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-freetype</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>libgdx</groupId>
+            <artifactId>gdx-controllers</artifactId>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>org.jetlang</groupId>
@@ -54,6 +59,8 @@
             <url>file://${project.basedir}/../repo</url>
         </repository>
     </repositories>
+
+
 
 
     <properties>

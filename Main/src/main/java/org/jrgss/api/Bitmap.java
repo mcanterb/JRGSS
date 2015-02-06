@@ -10,13 +10,17 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import lombok.Data;
+import lombok.ToString;
 import org.jrgss.FileUtil;
 import org.jrgss.JRGSSGame;
+import org.jrgss.shaders.TextShaderProgram;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
+import java.util.Queue;
 
 import static org.jrgss.JRGSSGame.runWithGLContext;
 
@@ -24,6 +28,7 @@ import static org.jrgss.JRGSSGame.runWithGLContext;
  * Created by matty on 6/27/14.
  */
 @Data
+@ToString(exclude = {"camera", "font", "frameBuffer", "region", "pixmap"})
 public class Bitmap {
     static HashMap<String, Pixmap> cache = new HashMap<>();
     String path;
@@ -36,6 +41,7 @@ public class Bitmap {
     OrthographicCamera camera;
     boolean isDisposed;
 
+
     public Bitmap(Pixmap img) {
         frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, img.getWidth(), img.getHeight(), false);
         OrthographicCamera camera = new OrthographicCamera();
@@ -45,7 +51,7 @@ public class Bitmap {
         batch.setProjectionMatrix(camera.combined);
         frameBuffer.begin();
         batch.begin();
-        Gdx.gl.glClearColor(0, 0, 0, 0f);
+        Gdx.gl.glClearColor(1, 1, 1, 0f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         batch.draw(new Texture(img), 0, 0);
         batch.end();
@@ -81,7 +87,7 @@ public class Bitmap {
                 batch.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
                 batch.begin();
-                Gdx.gl.glClearColor(0, 0, 0, 0f);
+                Gdx.gl.glClearColor(1, 1, 1, 0f);
                 Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
                 batch.draw(new Texture(img), 0, 0);
                 batch.end();
@@ -111,7 +117,7 @@ public class Bitmap {
                     frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
                 }
                 frameBuffer.begin();
-                Gdx.gl.glClearColor(0, 0, 0, 0f);
+                Gdx.gl.glClearColor(1, 1, 1, 0f);
                 Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
                 frameBuffer.end();
                 region = new TextureRegion(frameBuffer.getColorBufferTexture());
@@ -402,18 +408,23 @@ public class Bitmap {
         gradient_fill_rect(x, y, width, height, color1, color2, false);
     }
 
-    public void gradient_fill_rect(final int x, final int y, final int width, final int height, final Color color1, Color color2, boolean vertical) {
+
+
+    public void gradient_fill_rect(final int x, final int y, final int width, final int height, final Color color1, final Color color2, final boolean vertical) {
         runWithGLContext(new Runnable() {
             @Override
             public void run() {
-                SpriteBatch batch = new SpriteBatch();
-                batch.enableBlending();
-                batch.setProjectionMatrix(camera.combined);
+                ShapeRenderer shapeRenderer = new ShapeRenderer();
+                shapeRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+                shapeRenderer.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
-                batch.begin();
-                batch.setColor(color1.red / 255f, color1.green / 255f, color1.blue / 255f, color1.alpha / 255f);
-                batch.draw(Sprite.getColorTexture(), x, y, width, height);
-                batch.end();
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                if(vertical) {
+                    shapeRenderer.rect(x, y, width, height, color1.toGDX(), color1.toGDX(), color2.toGDX(), color2.toGDX());
+                } else {
+                    shapeRenderer.rect(x, y, width, height, color1.toGDX(), color2.toGDX(), color2.toGDX(), color1.toGDX());
+                }
+                shapeRenderer.end();
                 frameBuffer.end();
                 pixmap = null;
             }
@@ -430,7 +441,7 @@ public class Bitmap {
             @Override
             public void run() {
                 SpriteBatch batch = new SpriteBatch();
-                batch.enableBlending();
+                batch.disableBlending();
                 batch.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
                 batch.begin();
@@ -555,19 +566,24 @@ public class Bitmap {
                 //f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
                 frameBuffer.begin();
                 batch.begin();
-                batch.enableBlending();
+                //batch.disableBlending();
                 f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
-                f.draw(batch, string, drawX - 1, drawY);
-                f.draw(batch, string, drawX + 1, drawY);
-                f.draw(batch, string, drawX, drawY + 1);
-                f.draw(batch, string, drawX, drawY - 1);
-                f.draw(batch, string, drawX + 1, drawY + 1);
-                f.draw(batch, string, drawX - 1, drawY - 1);
-                f.draw(batch, string, drawX + 1, drawY - 1);
-                f.draw(batch, string, drawX - 1, drawY + 1);
+                f.draw(batch, string, drawX - 1.3f, drawY);
+                f.draw(batch, string, drawX + 1.3f, drawY);
+                f.draw(batch, string, drawX, drawY + 1.3f);
+                f.draw(batch, string, drawX, drawY - 1.3f);
+                f.draw(batch, string, drawX + 1.3f, drawY + 1.3f);
+                f.draw(batch, string, drawX - 1.3f, drawY - 1.3f);
+                f.draw(batch, string, drawX + 1.3f, drawY - 1.3f);
+                f.draw(batch, string, drawX - 1.3f, drawY + 1.3f);
+                batch.flush();
+                batch.setShader(TextShaderProgram.get());
+                //batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ZERO);
                 f.setColor(innerColor.red / 255f, innerColor.green / 255f, innerColor.blue / 255f, innerColor.alpha / 255f);
                 f.draw(batch, string, drawX, drawY);
                 batch.end();
+                batch.setShader(null);
+                batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
                 frameBuffer.end();
                 if (path == null) {
                     path = string;

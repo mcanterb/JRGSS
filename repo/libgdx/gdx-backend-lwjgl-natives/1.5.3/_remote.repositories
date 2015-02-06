@@ -1,0 +1,4 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Wed Feb 04 17:24:24 EST 2015
+gdx-backend-lwjgl-natives-1.5.3.pom>=
+gdx-backend-lwjgl-natives-1.5.3.jar>=

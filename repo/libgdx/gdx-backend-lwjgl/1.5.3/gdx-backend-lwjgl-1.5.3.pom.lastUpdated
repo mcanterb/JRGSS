@@ -1,0 +1,6 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Wed Feb 04 17:04:31 EST 2015
+https\://repo1.maven.org/maven2/.error=
+@default-file\:///Users/matt/Dropbox/github/JRGSS/Desktop/../repo/.lastUpdated=1423087471893
+https\://repo1.maven.org/maven2/.lastUpdated=1423087471861
+file\:///Users/matt/Dropbox/github/JRGSS/Desktop/../repo/.error=Could not transfer artifact libgdx\:gdx-backend-lwjgl\:pom\:1.5.3 from/to data-local (file\:///Users/matt/Dropbox/github/JRGSS/Desktop/../repo)\: Checksum validation failed, no checksums available from the repository

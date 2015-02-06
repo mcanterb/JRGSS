@@ -36,11 +36,11 @@ public class ToneShaderProgram extends ShaderProgram {
             + "void main()\n"//
             + "{\n" //
             + "  vec4 v_texColor =  v_color * texture2D(u_texture, v_texCoords);\n"
-            + "  float gray = v_texColor.x*0.149 + v_texColor.y*0.29412 + v_texColor.z*0.0588;\n"
+            + "  float gray = min(max(v_texColor.x*(38.0/255.0) + v_texColor.y*(75.0/255.0) + v_texColor.z*(15.0/255.0), 0.0), 1.0);\n"
             + "  gl_FragColor = vec4( min(max(tone.x + v_texColor.x + (gray - v_texColor.x)*tone.w, 0.0 ), 1.0),\n"
             + "                         min(max(tone.y + v_texColor.y + (gray - v_texColor.y)*tone.w, 0.0 ), 1.0),\n"
             + "                         min(max(tone.z + v_texColor.z + (gray - v_texColor.z)*tone.w, 0.0 ), 1.0),\n"
-            + "                         v_texColor.w );"
+            + "                         v_texColor.w );\n"
             + "}";
 
     /*

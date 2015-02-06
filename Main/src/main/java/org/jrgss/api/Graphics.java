@@ -3,6 +3,7 @@ package org.jrgss.api;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -31,14 +32,29 @@ public class Graphics {
     public static final Comparator<AbstractRenderable> alternateComparator = new Comparator<AbstractRenderable>() {
         @Override
         public int compare(AbstractRenderable o1, AbstractRenderable o2) {
-            if (o2 instanceof Window && !(o1 instanceof Window)) {
-                return -1;
+
+            int ret;
+            if(o1.getViewport() != null && o2.getViewport() != null) {
+                ret = Integer.compare(o1.getViewport().getZ(), o2.getViewport().getZ());
+                if(ret != 0) return ret;
+            } else
+            if(o2.getViewport() != null) {
+                ret = Integer.compare(o1.getZ(), o2.getViewport().getZ());
+                if (ret != 0) return ret;
+            } else
+            if(o1.getViewport() != null) {
+                ret = Integer.compare(o1.getViewport().getZ(), o2.getZ());
+                if (ret != 0) return ret;
+            } else {
+                ret = Integer.compare(o1.getZ(), o2.getZ());
+                if (ret != 0) return ret;
             }
-            if ((o1 instanceof Window) && !(o2 instanceof Window)) {
+            if(o1 instanceof Viewport && o1 == o2.getViewport()) {
                 return 1;
             }
-            int ret = Integer.compare(o1.getZ(), o2.getZ());
-            if (ret != 0) return ret;
+            if(o2 instanceof Viewport && o2 == o1.getViewport()) {
+                return -1;
+            }
             ret = Integer.compare(o1.getY(), o2.getY());
             if (ret != 0) return ret;
             ret = Long.compare(o1.getCreationTime(), o2.getCreationTime());
@@ -53,39 +69,143 @@ public class Graphics {
     @Getter
     @Setter
     public static int brightness = 255;
-    public static Texture backBuffer;
+    public static FrameBuffer backBuffer;
     public static float backBufferOpacity = 0;
     public static float transitionFade = 1f;
     public static boolean transitioning = false;
     public static Texture transitionTexture = null;
     public static float vague;
+    public static FrameBuffer tempBuffer;
+    public static int desiredWidth = 544;
+    public static int desiredHeight = 416;
+    public static boolean fullscreen = false;
+
+
 
     public static int getWidth() {
-        if (Gdx.graphics == null) {
-            return 544;
-        }
-        return Gdx.graphics.getWidth();
+        return desiredWidth;
     }
 
     public static int getHeight() {
-        if (Gdx.graphics == null) {
-            return 416;
+        return desiredHeight;
+    }
+
+    public static FrameBuffer checkBufferSize(FrameBuffer buffer) {
+        if(buffer == null || buffer.getWidth() != getWidth() || buffer.getHeight() != getHeight()) {
+            if(buffer != null) buffer.dispose();
+            buffer = new FrameBuffer(Pixmap.Format.RGBA8888, getWidth(), getHeight(), false);
         }
-        return Gdx.graphics.getHeight();
+        return buffer;
+    }
+
+    public static void toggleFullScreen() {
+        fullscreen = !fullscreen;
+        resize_screen(desiredWidth, desiredHeight);
+    }
+
+    public static void init() {
+        resize_screen(800, 450);
     }
 
     public static void resize_screen(int width, int height) {
+
         Gdx.app.log("Graphics", "Requested a larger screen size. " + width + "x" + height + ". Let's give it a shot!");
+        desiredHeight = height;
+        desiredWidth = width;
+        if(!fullscreen) {
+            Gdx.graphics.setDisplayMode(width, height, false);
+        } else {
+            com.badlogic.gdx.Graphics.DisplayMode mode = Gdx.graphics.getDesktopDisplayMode();
+            Gdx.app.log("Graphics", "Fullscreen resolution is "+mode.width+"x"+mode.height);
+            if(!Gdx.graphics.isFullscreen()) {
+                Gdx.graphics.setDisplayMode(mode.width, mode.height, true);
+            }
+
+        }
+        Gdx.app.log("Graphics", "We are now at "+getWidth() + "x"+getHeight());
+    }
+
+    /*public static void render(SpriteBatch batch) {
+        ArrayList<AbstractRenderable> renderables = new ArrayList<>();
+        ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
+        for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
+            if (renderable.getViewport() == null) {
+                viewportLessRenderables.add(renderable);
+            } else {
+                renderables.add(renderable);
+            }
+        }
+        Collections.sort(renderables);
+        Collections.sort(viewportLessRenderables, alternateComparator);
+        Iterator<AbstractRenderable> iter;
+        for (AbstractRenderable renderable : renderables) {
+            iter = viewportLessRenderables.iterator();
+            AbstractRenderable r;
+            while (iter.hasNext() && alternateComparator.compare((r = iter.next()), renderable) < 0) {
+                r.render(display);
+                iter.remove();
+            }
+            renderable.render(display);
+        }
+        for (AbstractRenderable renderable : viewportLessRenderables) {
+            renderable.render(display);
+        }
+
+        batch.begin();
+        if (backBuffer != null) {
+            batch.setColor(1f, 1f, 1f, backBufferOpacity);
+            batch.draw(backBuffer, 0, 0);
+        }
+
+        if (brightness != 255) {
+            batch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
+            batch.draw(Sprite.getColorTexture(), 0f, 0f, getWidth(), getHeight());
+            batch.setColor(1f, 1f, 1f, 1f);
+        }
+        batch.end();
+    }*/
+
+    private static void renderToBoundFramebuffer(SpriteBatch batch) {
+        GL20 gl = Gdx.gl;
+        Gdx.gl.glClearColor(0, 0, 0, 0f);
+        gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_STENCIL_BUFFER_BIT);
+        ArrayList<AbstractRenderable> renderables = new ArrayList<>();
+        ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
+        for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
+            if (renderable.getViewport() == null) {
+                viewportLessRenderables.add(renderable);
+            } else {
+                renderables.add(renderable);
+            }
+        }
+        Collections.sort(renderables);
+        Collections.sort(viewportLessRenderables, alternateComparator);
+
+        Iterator<AbstractRenderable> iter;
+        for (AbstractRenderable renderable : renderables) {
+            iter = viewportLessRenderables.iterator();
+            AbstractRenderable r;
+            while (iter.hasNext() && alternateComparator.compare((r = iter.next()), renderable) < 0) {
+                r.render(batch);
+                iter.remove();
+            }
+            renderable.render(batch);
+        }
+        for (AbstractRenderable renderable : viewportLessRenderables) {
+            renderable.render(batch);
+        }
     }
 
     public static void render(SpriteBatch batch) {
+        tempBuffer = checkBufferSize(tempBuffer);
         GL20 gl = Gdx.gl;
+        Gdx.gl.glClearColor(0, 0, 0, 0f);
         gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_STENCIL_BUFFER_BIT);
         if (transitioning) {
 
 
             batch.begin();
-            batch.draw(backBuffer, 0, 0);
+            batch.draw(backBuffer.getColorBufferTexture(), 0, 0);
             batch.end();
             batch.setShader(TransitionShaderProgram.get());
             batch.begin();
@@ -98,42 +218,34 @@ public class Graphics {
 
         } else {
 
-            ArrayList<AbstractRenderable> renderables = new ArrayList<>();
-            ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
-            for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
-                if (renderable.getViewport() == null) {
-                    viewportLessRenderables.add(renderable);
-                } else {
-                    renderables.add(renderable);
-                }
-            }
-            Collections.sort(renderables);
-            Collections.sort(viewportLessRenderables, alternateComparator);
-            Iterator<AbstractRenderable> iter;
-            for (AbstractRenderable renderable : renderables) {
-                iter = viewportLessRenderables.iterator();
-                AbstractRenderable r;
-                while (iter.hasNext() && alternateComparator.compare((r = iter.next()), renderable) < 0) {
-                    r.render(batch);
-                    iter.remove();
-                }
-                renderable.render(batch);
-            }
-            for (AbstractRenderable renderable : viewportLessRenderables) {
-                renderable.render(batch);
-            }
-            batch.begin();
+            tempBuffer.begin();
+            renderToBoundFramebuffer(batch);
+            tempBuffer.end();
+            SpriteBatch finalBatch = new SpriteBatch();
+            OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            camera.setToOrtho(true);
+            camera.update();
+            finalBatch.setProjectionMatrix(camera.combined);
+
+            finalBatch.begin();
+
+            finalBatch.setColor(1f,1f,1f,1f);
+            finalBatch.draw(tempBuffer.getColorBufferTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
+
             if (backBuffer != null) {
-                batch.setColor(1f, 1f, 1f, backBufferOpacity);
-                batch.draw(backBuffer, 0, 0);
+                finalBatch.setColor(1f, 1f, 1f, backBufferOpacity);
+                finalBatch.draw(backBuffer.getColorBufferTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
             }
 
             if (brightness != 255) {
-                batch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
-                batch.draw(Sprite.getColorTexture(), 0f, 0f, getWidth(), getHeight());
-                batch.setColor(1f, 1f, 1f, 1f);
+                finalBatch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
+                finalBatch.draw(Sprite.getColorTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
+                finalBatch.setColor(1f, 1f, 1f, 1f);
             }
-            batch.end();
+
+            finalBatch.end();
+            finalBatch.dispose();
+
         }
         frame_count++;
 
@@ -166,16 +278,11 @@ public class Graphics {
         SpriteBatch batch = new SpriteBatch();
         batch.setProjectionMatrix(JRGSSGame.camera.combined);
         batch.setColor(1f, 1f, 1f, 1f);
-        FrameBuffer frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, getWidth(), getHeight(), false);
-        frameBuffer.begin();
+        backBuffer = checkBufferSize(backBuffer);
+        backBuffer.begin();
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
-        render(batch);
-        Gdx.gl.glClearColor(0f, 0f, 0f, 0f);
-        byte[] bytes = ScreenUtils.getFrameBufferPixels(false);
-        frameBuffer.end();
-        Pixmap p = new Pixmap(getWidth(), getHeight(), Pixmap.Format.RGBA8888);
-        p.getPixels().put(bytes).rewind();
-        backBuffer = new Texture(p);
+        renderToBoundFramebuffer(batch);
+        backBuffer.end();
         backBufferOpacity = 1;
     }
 
@@ -253,7 +360,10 @@ public class Graphics {
 
     public static Bitmap snap_to_bitmap() {
         Gdx.app.log("Graphics", "Called Snap to Bitmap!");
-        byte[] bytes = ScreenUtils.getFrameBufferPixels(true);
+        tempBuffer.begin();
+        byte[] bytes = ScreenUtils.getFrameBufferPixels(0,0,getWidth(), getHeight(),true);
+        tempBuffer.end();
+        Gdx.app.log("Graphics", "got "+bytes.length+" pixels");
         Pixmap p = new Pixmap(getWidth(), getHeight(), Pixmap.Format.RGBA8888);
         p.getPixels().put(bytes).rewind();
 
@@ -265,6 +375,7 @@ public class Graphics {
     public static void frame_reset() {
         frame_count = 0;
     }
+
 
 
 }

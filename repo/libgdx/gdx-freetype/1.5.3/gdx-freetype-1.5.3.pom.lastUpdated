@@ -1,0 +1,6 @@
+#NOTE: This is an Aether internal implementation file, its format can be changed without prior notice.
+#Wed Feb 04 17:04:54 EST 2015
+@default-file\:///Users/matt/Dropbox/github/JRGSS/Main/../repo/.lastUpdated=1423087494306
+file\:///Users/matt/Dropbox/github/JRGSS/Main/../repo/.error=Could not transfer artifact libgdx\:gdx-freetype\:pom\:1.5.3 from/to data-local (file\:///Users/matt/Dropbox/github/JRGSS/Main/../repo)\: Checksum validation failed, no checksums available from the repository
+https\://repo1.maven.org/maven2/.error=
+https\://repo1.maven.org/maven2/.lastUpdated=1423087494292

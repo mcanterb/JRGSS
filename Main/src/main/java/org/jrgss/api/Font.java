@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.jrgss.FileUtil;
 import org.jrgss.JRGSSGame;
 
@@ -27,6 +28,8 @@ public class Font {
     boolean bold = false;
     boolean italic = false;
     boolean shadow = false;
+    @Getter
+    static int default_size = 24;
     String[] name;
 
 
@@ -35,7 +38,7 @@ public class Font {
     }
 
     public Font(String[] name) {
-        this(name, 24);
+        this(name, default_size);
     }
 
     public Font(String[] name, final int size) {
@@ -49,7 +52,7 @@ public class Font {
                 public void run() {
                     FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
                     FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size * 0.85);
+                    param.size = (int)(size *0.85);
                     param.flip = true;
                     param.genMipMaps = true;
                     bitmapFont = generator.generateFont(param);
@@ -61,6 +64,11 @@ public class Font {
 
     }
 
+    public static void setDefault_size(int size) {
+        Gdx.app.log("Font", "Setting default size to "+size);
+        default_size = size;
+    }
+
     public void setName(String[] name) {
         this.name = name;
     }
@@ -69,9 +77,7 @@ public class Font {
         return color;
     }
 
-    public static int default_size() {
-        return 24;
-    }
+
 
     public static String[] default_name() {
         return new String[]{"Verdana", "Arial", "Courier New"};
@@ -102,6 +108,7 @@ public class Font {
     }
 
     public void setSize(final int size) {
+        this.size = size;
         if (fontCache.containsKey(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"))) {
             bitmapFont = fontCache.get(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
         } else {
@@ -110,7 +117,7 @@ public class Font {
                 public void run() {
                     FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
                     FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size * 0.85);
+                    param.size = (int)(size *0.85);
                     param.flip = true;
                     param.genMipMaps = true;
                     bitmapFont = generator.generateFont(param);
@@ -120,6 +127,7 @@ public class Font {
                 }
             });
         }
+
     }
 
     @Data

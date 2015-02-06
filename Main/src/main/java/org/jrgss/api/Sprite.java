@@ -1,5 +1,7 @@
 package org.jrgss.api;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -18,10 +20,10 @@ public class Sprite extends AbstractRenderable {
     public static ShaderProgram alphaBlendingShader = null;
     Bitmap bitmap;
     Rect src_rect = new Rect();
-    Viewport viewport = new Viewport();
+    Viewport viewport;
     boolean visible = true;
     int x, y, z, ox, oy;
-    double zoom_x, zoom_y;
+    double zoom_x = 1.0, zoom_y = 1.0;
     double angle;
     double wave_amp;
     double wave_length;
@@ -35,7 +37,6 @@ public class Sprite extends AbstractRenderable {
     Color color = new Color();
     Tone tone = new Tone();
     SpriteBatch batch;
-    boolean disposed;
 
     public Sprite() {
         JRGSSGame.runWithGLContext(new Runnable() {
@@ -98,7 +99,9 @@ public class Sprite extends AbstractRenderable {
                 + "varying vec2 v_texCoords;\n" //
                 + "uniform sampler2D u_texture;\n" //
                 + "uniform vec4 blend_color;\n"
-                + "uniform int blend_mode;"
+                + "uniform vec4 blend_color2;\n"
+                + "uniform int blend_mode;\n"
+                + "uniform vec4 tone;\n"
                 + "void main()\n"//
                 + "{\n" //
                 + "  if(blend_mode == 0) {\n"
@@ -109,13 +112,24 @@ public class Sprite extends AbstractRenderable {
                 + "                        v_texColor.w );\n"
                 + "  } else if(blend_mode == 1) {\n"
                 + "  vec4 v_texColor =  v_color * texture2D(u_texture, v_texCoords);"
-                + "  gl_FragColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x), \n"
-                + "                       (blend_color.y*blend_color.w)+(v_texColor.y), \n"
-                + "                       (blend_color.z*blend_color.w)+(v_texColor.z), \n"
+                + "  gl_FragColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*blend_color.w), \n"
+                + "                       (blend_color.y*blend_color.w)+(v_texColor.y*blend_color.w), \n"
+                + "                       (blend_color.z*blend_color.w)+(v_texColor.z*blend_color.w), \n"
                 + "                        v_texColor.w );\n"
                 + "  } else {\n"
                 + "    discard;\n"
+                + "    return;\n"
                 + "  }\n"
+                + "  vec4 v_texColor =  gl_FragColor;\n"
+                + "  v_texColor = vec4( (blend_color2.x*blend_color2.w)+(v_texColor.x*(1.0-blend_color2.w)), \n"
+                + "                       (blend_color2.y*blend_color2.w)+(v_texColor.y*(1.0-blend_color2.w)), \n"
+                + "                       (blend_color2.z*blend_color2.w)+(v_texColor.z*(1.0-blend_color2.w)), \n"
+                + "                        v_texColor.w );\n"
+                + "  float gray = v_texColor.x*0.149 + v_texColor.y*0.29412 + v_texColor.z*0.0588;\n"
+                + "  gl_FragColor = vec4( min(max(tone.x + v_texColor.x + (gray - v_texColor.x)*tone.w, 0.0 ), 1.0),\n"
+                + "                         min(max(tone.y + v_texColor.y + (gray - v_texColor.y)*tone.w, 0.0 ), 1.0),\n"
+                + "                         min(max(tone.z + v_texColor.z + (gray - v_texColor.z)*tone.w, 0.0 ), 1.0),\n"
+                + "                         v_texColor.w );\n"
                 + "}";
         ShaderProgram program = new ShaderProgram(vertexShader, fragmentShader);
         if (!program.isCompiled()) throw new IllegalArgumentException("Error compiling shader: " + program.getLog());
@@ -123,8 +137,11 @@ public class Sprite extends AbstractRenderable {
         return program;
     }
 
+    protected void setShaderTone(Tone t) {
+        alphaBlendingShader.setUniformf("tone", t.getRed() / 255f, t.getGreen() / 255f, t.getBlue() / 255f, t.getGray() / 255f);
+    }
+
     public void dispose() {
-        disposed = true;
         super.dispose();
     }
 
@@ -146,19 +163,33 @@ public class Sprite extends AbstractRenderable {
 
     @Override
     public void render(SpriteBatch _) {
-        if (bitmap != null && visible && opacity > 0 && (viewport == null || viewport.isVisible())) {
+        if (bitmap != null && visible && opacity > 0 && (viewport == null || (viewport.isVisible() && !viewport.isDisposed()))) {
             //Gdx.app.log("Sprite", String.format("Rendering: %s, %d, %d, %d, %d", viewport, x, y, ox, oy));
+            if(batch == null) {
+                batch = new SpriteBatch();
+                batch.setShader(getAlphaBlendingShader());
+            }
+            batch.setProjectionMatrix(JRGSSGame.camera.combined);
             batch.enableBlending();
             if(viewport != null) viewport.begin(batch);
             int viewportX = viewport == null?0:(viewport.rect.x - viewport.ox);
             int viewportY = viewport == null?0:(viewport.rect.y - viewport.oy);
-            batch.setColor(1f, 1f, 1f, (opacity / 255f));
+            batch.setColor(1f, 1f, 1f, Math.min(255,opacity) / 255f);
             getAlphaBlendingShader().begin();
-            getAlphaBlendingShader().setUniformf("blend_color", color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f, (color.getAlpha()/255f));
-            getAlphaBlendingShader().setUniformi("blend_mode", blend_type);
+            getAlphaBlendingShader().setUniformf("blend_color", color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, (color.getAlpha() / 255f));
+            getAlphaBlendingShader().setUniformi("blend_mode", 0);
+            setShaderTone(tone);
             batch.begin();
-
-            bitmap.render(batch, x - ox + viewportX, y - oy + viewportY, src_rect);
+            switch (blend_type) {
+                case 0:
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+                    break;
+                case 1:
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    break;
+            }
+            bitmap.render(batch, x - ox + viewportX, y - oy + viewportY,
+                    (int)(src_rect.getWidth()*zoom_x), (int)(src_rect.getHeight()*zoom_y),src_rect);
             batch.end();
             getAlphaBlendingShader().end();
             if(viewport != null) viewport.end();
@@ -166,6 +197,7 @@ public class Sprite extends AbstractRenderable {
     }
 
     public void setBitmap(Bitmap b) {
+
         this.bitmap = b;
         if (b != null) {
             this.src_rect.set(0, 0, b.getWidth(), b.getHeight());

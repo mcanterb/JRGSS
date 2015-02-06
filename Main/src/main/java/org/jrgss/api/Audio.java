@@ -14,8 +14,10 @@ import java.util.Map;
 public class Audio {
 
     static Music bgm;
+    static String bgmFilename;
     static Music bgs;
     static Music me;
+    static Sound se;
     static boolean mePlaying = false;
 
     static Map<String, Sound> se_cache = new HashMap<>();
@@ -33,16 +35,21 @@ public class Audio {
     }
 
     public synchronized static void bgm_play(String filename, int volume, int pitch, int pos) {
-        if(bgm != null) {
+        Gdx.app.log("Audio", "Play BGM "+filename+" @ volume ="+ volume+", pitch ="+pitch+", pos = "+pos);
+
+        if(bgm != null && !bgmFilename.equals(filename)) {
             bgm_stop();
         }
-        Gdx.app.log("Audio", "Play BGM "+filename+" @ volume ="+ volume+", pitch ="+pitch+", pos = "+pos);
-        bgm = Gdx.audio.newMusic(FileUtil.loadAudio(filename));
-        bgm.setLooping(true);
-        bgm.setVolume(volume/100f);
-        if(!mePlaying) {
-            bgm.play();
+        if(bgm == null) {
+            bgm = Gdx.audio.newMusic(FileUtil.loadAudio(filename));
+            bgm.setLooping(true);
+            bgmFilename = filename;
+            if(!mePlaying) {
+                bgm.play();
+            }
         }
+        bgm.setVolume(Math.min(1.0f,volume/100f));
+
     }
 
     public static void bgs_play(String filename) {
@@ -113,8 +120,13 @@ public class Audio {
             se = Gdx.audio.newSound(FileUtil.loadAudio(filename));
             se_cache.put(filename, se);
         }
+        Audio.se = se;
         se.play(volume/100f, pitch/100f, 0);
 
+    }
+
+    public static void se_stop() {
+        se.stop();
     }
 
     public static void bgm_fade(int millis) {

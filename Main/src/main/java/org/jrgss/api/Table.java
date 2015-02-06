@@ -103,7 +103,6 @@ public class Table extends RubyObject {
         this.dim1 = (int)args[0].convertToInteger().getLongValue();
         this.dim2 = (int)(args.length > 1?args[1].convertToInteger().getLongValue():1);
         this.dim3 = (int)(args.length > 2?args[2].convertToInteger().getLongValue():1);
-        Gdx.app.log("Table", String.format("Initialized Table with sizes %d, %d, %d", dim1, dim2, dim3));
         this.values = ShortBuffer.allocate(dim1*dim2*dim3);
     }
 

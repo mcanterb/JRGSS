@@ -17,24 +17,96 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-backend-lwjgl</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-natives</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-backend-lwjgl-natives</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-freetype-natives</artifactId>
-            <version>1.2</version>
+            <version>1.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>libgdx</groupId>
+            <artifactId>gdx-controllers-desktop</artifactId>
+            <version>1.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>libgdx</groupId>
+            <artifactId>gdx-controllers-desktop-natives</artifactId>
+            <version>1.5.3</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.jrgss.Desktop</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.7</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <configuration>
+                            <tasks>
+                                <taskdef name="bundleapp"
+                                         classname="com.oracle.appbundler.AppBundlerTask"
+                                         classpath="../util/appbundler-1.0.jar"/>
+                                <property environment="env" />
+                                <bundleapp outputdirectory="target"
+                                           name="JRGSS"
+                                           displayname="JRGSS"
+                                           identifier="org.jrgss"
+                                           mainclassname="org.jrgss.Desktop"
+                                          >
+                                    <option value="-Xmx512M" />
+                                    <argument value="$APP_ROOT/Data"/>
+                                    <argument value="$APP_ROOT/Data"/>
+                                    <argument value="$APP_ROOT/Data"/>
+                                    <runtime dir="/Library/Java/JavaVirtualMachines/jdk1.7.0_21.jdk/Contents/Home" />
+                                    <classpath file="target/Desktop-1.0-SNAPSHOT.jar"/>
+                                </bundleapp>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
 
     <repositories>
         <repository>

@@ -1,7 +1,57 @@
 require "zlib"
+require 'fileutils'
 
 def rgss_main(&block)
     Java::OrgJrgss::JRGSSGame::jrgssMain(block)
+end
+
+class << Dir
+
+    alias_method(:jrgss_glob, :glob)
+    def glob(*args, &block)
+        path = args[0]
+        args.delete_at(0)
+
+        if block
+            for p in $_jrgss_paths
+                jrgss_glob(File.join(p,path), *args, &block)
+            end
+         else
+            result = []
+            for p in $_jrgss_paths
+                result << jrgss_glob(File.join(p,path), *args)
+            end
+            return result.flatten
+         end
+    end
+
+end
+
+
+class << File
+
+    alias_method(:jrgss_open, :open)
+    def open(path, *args, &block)
+        if path.start_with?("/")
+            puts "Doing absolute file "+path
+            return jrgss_open(*args, &block)
+        end
+        exception = nil
+        FileUtils.mkdir_p(File.join($_jrgss_paths[0],File.dirname(path)))
+        for p in $_jrgss_paths
+            begin
+                if block
+                    return jrgss_open(File.join(p,path), *args, &block)
+                else
+                    return jrgss_open(File.join(p,path), *args)
+                end
+            rescue Exception => e
+                exception = e
+            end
+        end
+        raise exception
+    end
+
 end
 
 
@@ -17,8 +67,10 @@ end
 
 def save_data(obj, filename)
     filename = filename.gsub("\\", "/")
+    filename = File.join($_jrgss_paths[0],filename)
     puts 'Saving Data for '+filename
-    File.open(File.join($_jrgss_home,filename), "wb") { |f|
+    FileUtils.mkdir_p(File.dirname(filename))
+    File.open(filename, "wb") { |f|
       Marshal.dump(obj, f)
     }
 end

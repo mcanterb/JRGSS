@@ -130,6 +130,7 @@ public class Bitmap {
         return (x < a) ? a : (x > b) ? b : x;
     }
 
+
     public static void blur(IntBuffer in, IntBuffer out, int width, int height, int radius) {
         int widthMinus1 = width - 1;
         int tableSize = 2 * radius + 1;
@@ -153,7 +154,7 @@ public class Bitmap {
             }
 
             for (int x = 0; x < width; x++) {
-                out.put(outIndex, (divide[ta] << 24) | (divide[tr] << 16) | (divide[tg] << 8) | divide[tb]);
+                out.put(outIndex, (divide[ta] << 24) | (divide[tr] << 16) | (divide[tg] << 8) | 0xff);
 
                 int i1 = x + radius + 1;
                 if (i1 > widthMinus1)
@@ -165,8 +166,8 @@ public class Bitmap {
                 int rgb2 = in.get(inIndex + i2);
 
                 ta += ((rgb1 >> 24) & 0xff) - ((rgb2 >> 24) & 0xff);
-                tr += ((rgb1 & 0xff0000) - (rgb2 & 0xff0000)) >> 16;
-                tg += ((rgb1 & 0xff00) - (rgb2 & 0xff00)) >> 8;
+                tr += ((rgb1 >> 16) & 0xff) - ((rgb2 >> 16) & 0xff);
+                tg += ((rgb1 >> 8) & 0xff) - ((rgb2 >> 8) & 0xff);
                 tb += (rgb1 & 0xff) - (rgb2 & 0xff);
                 outIndex += height;
             }
@@ -187,7 +188,7 @@ public class Bitmap {
             @Override
             public void run() {
                 Pixmap p = getPixmap();
-                IntBuffer inPixels = p.getPixels().asIntBuffer();
+                IntBuffer inPixels = p.getPixels().duplicate().asIntBuffer();
                 IntBuffer outPixels = IntBuffer.allocate(inPixels.remaining());
                 while (inPixels.remaining() > 0) {
                     Color c = new Color(inPixels.get());
@@ -374,6 +375,7 @@ public class Bitmap {
             public void run() {
                 Pixmap p = getPixmap();
                 IntBuffer inPixels = p.getPixels().asIntBuffer();
+                Gdx.app.log("Graphics", "Length of IntBuffer = "+inPixels.remaining());
                 IntBuffer outPixels = IntBuffer.allocate(inPixels.remaining());
                 blur(inPixels, outPixels, getWidth(), getHeight(), 2);
                 blur(outPixels, inPixels, getHeight(), getWidth(), 2);
@@ -409,7 +411,6 @@ public class Bitmap {
     }
 
 
-
     public void gradient_fill_rect(final int x, final int y, final int width, final int height, final Color color1, final Color color2, final boolean vertical) {
         runWithGLContext(new Runnable() {
             @Override
@@ -419,7 +420,7 @@ public class Bitmap {
                 shapeRenderer.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                if(vertical) {
+                if (vertical) {
                     shapeRenderer.rect(x, y, width, height, color1.toGDX(), color1.toGDX(), color2.toGDX(), color2.toGDX());
                 } else {
                     shapeRenderer.rect(x, y, width, height, color1.toGDX(), color2.toGDX(), color2.toGDX(), color1.toGDX());
@@ -445,12 +446,13 @@ public class Bitmap {
                 batch.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
                 batch.begin();
-                batch.setColor(color.red / 255f, color.green / 255f, color.blue / 255f, color.alpha / 255f);
+                batch.setColor(color.toGDX());
                 //(height - srcRect.getHeight()) - srcRect.getY()
                 batch.draw(Sprite.getColorTexture(), x, y, width, height);
                 batch.end();
                 frameBuffer.end();
                 pixmap = null;
+                batch.dispose();
             }
         });
     }
@@ -567,6 +569,7 @@ public class Bitmap {
                 frameBuffer.begin();
                 batch.begin();
                 //batch.disableBlending();
+
                 f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
                 f.draw(batch, string, drawX - 1.3f, drawY);
                 f.draw(batch, string, drawX + 1.3f, drawY);
@@ -581,6 +584,8 @@ public class Bitmap {
                 //batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ZERO);
                 f.setColor(innerColor.red / 255f, innerColor.green / 255f, innerColor.blue / 255f, innerColor.alpha / 255f);
                 f.draw(batch, string, drawX, drawY);
+
+
                 batch.end();
                 batch.setShader(null);
                 batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);

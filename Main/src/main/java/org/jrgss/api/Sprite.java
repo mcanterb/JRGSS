@@ -85,7 +85,7 @@ public class Sprite extends AbstractRenderable {
                 + "void main()\n" //
                 + "{\n" //
                 + "   v_color = " + ShaderProgram.COLOR_ATTRIBUTE + ";\n" //
-                //+ "   v_color.a = v_color.a * (256.0/255.0);\n" //
+                + "   v_color.a = v_color.a * (256.0/255.0);\n" //
                 + "   v_texCoords = " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n" //
                 + "   gl_Position =  u_projTrans * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n" //
                 + "}\n";
@@ -99,32 +99,15 @@ public class Sprite extends AbstractRenderable {
                 + "varying vec2 v_texCoords;\n" //
                 + "uniform sampler2D u_texture;\n" //
                 + "uniform vec4 blend_color;\n"
-                + "uniform vec4 blend_color2;\n"
                 + "uniform int blend_mode;\n"
                 + "uniform vec4 tone;\n"
                 + "void main()\n"//
                 + "{\n" //
-                + "  if(blend_mode == 0) {\n"
                 + "  vec4 v_texColor =  v_color * texture2D(u_texture, v_texCoords);"
-                + "  gl_FragColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*(1.0-blend_color.w)), \n"
-                + "                       (blend_color.y*blend_color.w)+(v_texColor.y*(1.0-blend_color.w)), \n"
-                + "                       (blend_color.z*blend_color.w)+(v_texColor.z*(1.0-blend_color.w)), \n"
-                + "                        v_texColor.w );\n"
-                + "  } else if(blend_mode == 1) {\n"
-                + "  vec4 v_texColor =  v_color * texture2D(u_texture, v_texCoords);"
-                + "  gl_FragColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*blend_color.w), \n"
-                + "                       (blend_color.y*blend_color.w)+(v_texColor.y*blend_color.w), \n"
-                + "                       (blend_color.z*blend_color.w)+(v_texColor.z*blend_color.w), \n"
-                + "                        v_texColor.w );\n"
-                + "  } else {\n"
-                + "    discard;\n"
-                + "    return;\n"
-                + "  }\n"
-                + "  vec4 v_texColor =  gl_FragColor;\n"
-                + "  v_texColor = vec4( (blend_color2.x*blend_color2.w)+(v_texColor.x*(1.0-blend_color2.w)), \n"
-                + "                       (blend_color2.y*blend_color2.w)+(v_texColor.y*(1.0-blend_color2.w)), \n"
-                + "                       (blend_color2.z*blend_color2.w)+(v_texColor.z*(1.0-blend_color2.w)), \n"
-                + "                        v_texColor.w );\n"
+                //+ "  v_texColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*(1.0-blend_color.w)), \n"
+                //+ "                       (blend_color.y*blend_color.w)+(v_texColor.y*(1.0-blend_color.w)), \n"
+                //+ "                       (blend_color.z*blend_color.w)+(v_texColor.z*(1.0-blend_color.w)), \n"
+                //+ "                        v_texColor.w );\n"
                 + "  float gray = v_texColor.x*0.149 + v_texColor.y*0.29412 + v_texColor.z*0.0588;\n"
                 + "  gl_FragColor = vec4( min(max(tone.x + v_texColor.x + (gray - v_texColor.x)*tone.w, 0.0 ), 1.0),\n"
                 + "                         min(max(tone.y + v_texColor.y + (gray - v_texColor.y)*tone.w, 0.0 ), 1.0),\n"
@@ -174,23 +157,31 @@ public class Sprite extends AbstractRenderable {
             if(viewport != null) viewport.begin(batch);
             int viewportX = viewport == null?0:(viewport.rect.x - viewport.ox);
             int viewportY = viewport == null?0:(viewport.rect.y - viewport.oy);
-            batch.setColor(1f, 1f, 1f, Math.min(255,opacity) / 255f);
+            com.badlogic.gdx.graphics.Color gdxBlend = color.toGDX();
+            batch.setColor((1f-gdxBlend.a) + (gdxBlend.r*gdxBlend.a) , (1f-gdxBlend.a) + (gdxBlend.g*gdxBlend.a), (1f-gdxBlend.a) + (gdxBlend.b*gdxBlend.a), (opacity / 255f));
             getAlphaBlendingShader().begin();
-            getAlphaBlendingShader().setUniformf("blend_color", color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, (color.getAlpha() / 255f));
-            getAlphaBlendingShader().setUniformi("blend_mode", 0);
+            //getAlphaBlendingShader().setUniformf("blend_color", color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, (color.getAlpha() / 255f));
             setShaderTone(tone);
-            batch.begin();
+
             switch (blend_type) {
                 case 0:
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
                     batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
                     break;
                 case 1:
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
                     batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
                     break;
+                case 2:
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_REVERSE_SUBTRACT);
+                    break;
             }
-            bitmap.render(batch, x - ox + viewportX, y - oy + viewportY,
+            batch.begin();
+            bitmap.render(batch, x - (int)(ox*zoom_x) + viewportX, y - (int)(oy*zoom_y) + viewportY,
                     (int)(src_rect.getWidth()*zoom_x), (int)(src_rect.getHeight()*zoom_y),src_rect);
             batch.end();
+            Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
             getAlphaBlendingShader().end();
             if(viewport != null) viewport.end();
         }
@@ -221,7 +212,7 @@ public class Sprite extends AbstractRenderable {
     }
 
     public void flash(Color color, int duration) {
-
+        Gdx.app.log("Sprite", "Flash!");
     }
 
     public int getWidth() {
@@ -230,6 +221,10 @@ public class Sprite extends AbstractRenderable {
 
     public int getHeight() {
         return src_rect.getHeight();
+    }
+
+    public void setOpacity(int opacity) {
+        this.opacity = Math.max(0, Math.min(255, opacity));
     }
 
 }

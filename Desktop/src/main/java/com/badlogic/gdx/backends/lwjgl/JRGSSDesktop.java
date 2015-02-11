@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Clipboard;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.ObjectMap;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.jrgss.JRGSSApplication;
 import org.jrgss.JRGSSApplicationListener;
@@ -28,7 +29,7 @@ import java.util.concurrent.Executors;
  * @author matt
  * @date 7/5/14
  */
-@Data
+@Data()
 public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
 
     JRGSSApplicationListener jrgssApplicationListener;
@@ -101,6 +102,7 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
         } catch (LWJGLException e) {
             throw new GdxRuntimeException(e);
         }
+
         audio.registerMusic("ogx", Ogg.Music.class);
         audio.registerSound("ogx", Ogg.Sound.class);
         listener.create();
@@ -231,10 +233,16 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
 
     }
 
+    @Override
+    public boolean isFocused() {
+        return Display.isActive();
+    }
+
     private org.lwjgl.input.Cursor emptyCursor;
 
     private void hideMouse() {
-        try{
+
+        try {
             if (emptyCursor == null) {
                 if (Mouse.isCreated()) {
                     int min = org.lwjgl.input.Cursor.getMinCursorSize();
@@ -245,10 +253,19 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
                             "Could not create empty cursor before Mouse object is created");
                 }
             }
-            if (Mouse.isInsideWindow())
+            if (Mouse.isInsideWindow() && Display.isActive());
                 Mouse.setNativeCursor(emptyCursor);
-        }catch (LWJGLException e) {
+        } catch (LWJGLException e) {
             //We'll ignore this for now...
         }
     }
+
+    public boolean equals(Object other) {
+        return this == other;
+    }
+
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
 }

@@ -77,4 +77,27 @@ public class User32 {
         }
     };
 
+    //  ShowWindow = Win32API.new('user32'  , 'ShowWindow'               , 'ii'          , 'i')
+    @Win32Function(dll = "user32", name = "ShowWindow", spec = "ii")
+    public static final DLLImpl ShowWindow = new DLLImpl() {
+        @Override
+        public IRubyObject call(Win32API api, ThreadContext context, IRubyObject[] args) {
+
+            int window = getInt(args[0]);
+            int flags = getInt(args[1]);
+
+            //Supports Zeus Fullscreen++ script
+            if(window == ZEUS_FULLSCREEN_WINDOW) {
+                if(flags == 3) {
+                    Graphics.setFullscreen(true);
+                }
+                if(flags == 0) {
+                    Graphics.setFullscreen(false);
+                }
+            }
+
+            return rubyNum(0);
+        }
+    };
+
 }

@@ -1,7 +1,7 @@
 package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import lombok.Data;
 import lombok.ToString;
@@ -33,16 +33,21 @@ public class Plane extends Sprite {
             int viewportY = viewport == null?0:(viewport.rect.y - viewport.oy);
             int viewportWidth = viewport == null?Graphics.getWidth():viewport.rect.getWidth();
             int viewportHeight = viewport == null?Graphics.getHeight():viewport.rect.getHeight();
-            batch.setColor(1f, 1f, 1f, (opacity / 255f));
+            com.badlogic.gdx.graphics.Color gdxBlend = color.toGDX();
+            batch.setColor((1f-gdxBlend.a) + (gdxBlend.r*gdxBlend.a) , (1f-gdxBlend.a) + (gdxBlend.g*gdxBlend.a), (1f-gdxBlend.a) + (gdxBlend.b*gdxBlend.a), (opacity / 255f));
             getAlphaBlendingShader().begin();
-            getAlphaBlendingShader().setUniformf("blend_color", color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, (color.getAlpha() / 255f));
-            getAlphaBlendingShader().setUniformi("blend_mode", 0);
             setShaderTone(tone);
             switch (blend_type) {
                 case 0:
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
                     batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
                     break;
                 case 1:
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
+                    batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
+                    break;
+                case 2:
+                    Gdx.gl.glBlendEquation(GL20.GL_FUNC_REVERSE_SUBTRACT);
                     batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE);
                     break;
             }
@@ -77,6 +82,7 @@ public class Plane extends Sprite {
 
 
             batch.end();
+            Gdx.gl.glBlendEquation(GL20.GL_FUNC_ADD);
             getAlphaBlendingShader().end();
             if(viewport != null) viewport.end();
         }

@@ -156,8 +156,8 @@ public class Window extends AbstractRenderable {
         Gdx.app.log("Window", "set Viewport @ " + viewport.toString());
     }
 
-    public void setOpacity(int value) {
-        this.opacity = value;
+    public void setOpacity(int opacity) {
+        this.opacity = Math.max(0, Math.min(255, opacity));
     }
 
     public boolean isOpen() {
@@ -173,6 +173,14 @@ public class Window extends AbstractRenderable {
             openness = value;
         }
 
+    }
+
+    public void setBack_opacity(int opacity) {
+        this.back_opacity = Math.max(0, Math.min(255, opacity));
+    }
+
+    public void setContents_opacity(int opacity) {
+        this.contents_opacity = Math.max(0, Math.min(255, opacity));
     }
 
     public void update() {
@@ -241,15 +249,13 @@ public class Window extends AbstractRenderable {
 
         batch.draw(verticalLeft, x, y + 16, 16, height - 2 * 16);
         batch.draw(verticalRight, x + width - 16, y + 16, 16, height - 2 * 16);
-        batch.setColor(1.0f, 1.0f, 1.0f, contents_opacity / 255f);
+
         batch.flush();
-        //Scissors.pushScissors(scissors);
-        batch.setColor(com.badlogic.gdx.graphics.Color.WHITE);
+        batch.setColor(1.0f, 1.0f, 1.0f, contents_opacity / 255f);
         if (isOpen()) {
             contents.render(this.batch, x + padding, y + padding, ox, oy, width - (padding * 2), height - (padding * 2));
         }
         batch.flush();
-        //Scissors.popScissors();
 
         if (active) {
             batch.setColor(1.0f, 1.0f, 1.0f, cursor_opacity * globalOpacity);

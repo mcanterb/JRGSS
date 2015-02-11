@@ -13,6 +13,8 @@ import java.util.Map;
  */
 public class Audio {
 
+    public static final Object sync = new Object();
+
     static Music bgm;
     static String bgmFilename;
     static Music bgs;
@@ -45,7 +47,9 @@ public class Audio {
             bgm.setLooping(true);
             bgmFilename = filename;
             if(!mePlaying) {
-                bgm.play();
+                synchronized (sync) {
+                    bgm.play();
+                }
             }
         }
         bgm.setVolume(Math.min(1.0f,volume/100f));
@@ -73,7 +77,9 @@ public class Audio {
         bgs.setLooping(true);
         bgs.setVolume(volume/100f);
         if(!mePlaying) {
-            bgs.play();
+            synchronized (sync) {
+                bgs.play();
+            }
         }
     }
 
@@ -89,7 +95,7 @@ public class Audio {
         if(bgm != null) {
             bgm.pause();
         }
-        Music me = Gdx.audio.newMusic(FileUtil.loadAudio(filename));
+        me = Gdx.audio.newMusic(FileUtil.loadAudio(filename));
         me.setOnCompletionListener(new Music.OnCompletionListener() {
             @Override
             public void onCompletion(Music music) {
@@ -101,7 +107,9 @@ public class Audio {
         });
         me.setLooping(false);
         me.setVolume(volume/100f);
-        me.play();
+        synchronized (sync) {
+            me.play();
+        }
         mePlaying = true;
     }
 
@@ -121,7 +129,9 @@ public class Audio {
             se_cache.put(filename, se);
         }
         Audio.se = se;
-        se.play(volume/100f, pitch/100f, 0);
+        synchronized (sync) {
+            se.play(volume / 100f, pitch / 100f, 0);
+        }
 
     }
 

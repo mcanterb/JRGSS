@@ -84,16 +84,16 @@
                                          classpath="../util/appbundler-1.0.jar"/>
                                 <property environment="env" />
                                 <bundleapp outputdirectory="target"
-                                           name="JRGSS"
-                                           displayname="JRGSS"
-                                           identifier="org.jrgss"
+                                           name="Vidar Demo"
+                                           displayname="Vidar Demo"
+                                           identifier="org.vidar.VidarDemo"
                                            mainclassname="org.jrgss.Desktop"
                                           >
                                     <option value="-Xmx512M" />
-                                    <argument value="$APP_ROOT/Data"/>
-                                    <argument value="$APP_ROOT/Data"/>
-                                    <argument value="$APP_ROOT/Data"/>
-                                    <runtime dir="/Library/Java/JavaVirtualMachines/jdk1.7.0_21.jdk/Contents/Home" />
+                                    <argument value="$APP_ROOT/Resources/Vidar"/>
+                                    <argument value="$APP_ROOT/Resources/Vidar"/>
+                                    <argument value="$APP_ROOT/Resources/JRGSS"/>
+                                    <runtime dir="/Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home" />
                                     <classpath file="target/Desktop-1.0-SNAPSHOT.jar"/>
                                 </bundleapp>
                             </tasks>

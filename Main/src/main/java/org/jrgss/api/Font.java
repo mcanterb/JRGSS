@@ -52,9 +52,9 @@ public class Font {
                 public void run() {
                     FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
                     FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size *0.85);
+                    param.size = (int)(size *0.80);
                     param.flip = true;
-                    param.genMipMaps = true;
+                    param.genMipMaps = false;
                     bitmapFont = generator.generateFont(param);
                     fontCache.put(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"), bitmapFont);
                     generator.dispose();
@@ -117,9 +117,9 @@ public class Font {
                 public void run() {
                     FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
                     FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size *0.85);
+                    param.size = (int)(size *0.80);
                     param.flip = true;
-                    param.genMipMaps = true;
+                    param.genMipMaps = false;
                     bitmapFont = generator.generateFont(param);
                     fontCache.put(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"), bitmapFont);
                     generator.dispose();

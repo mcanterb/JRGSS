@@ -1,12 +1,12 @@
 package org.jrgss;
 
-import com.badlogic.gdx.Files;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.jrgss.rgssa.EncryptedArchive;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFile;
 import org.jruby.RubyString;
 
 import java.io.File;
@@ -23,6 +23,22 @@ public class FileUtil {
     static EncryptedArchive archive = null;
     public static String gameDirectory = null;
     public static String rtpDirectory = null;
+    public static String localDirectory;
+
+    public static void setLocalDirectory(String title) {
+        String os = System.getProperty("os.name");
+        System.out.println(os);
+        if(os.contains("Mac")) {
+            localDirectory = System.getProperty("user.home")+"/Library/Application Support/JRGSS/"+title+"/";
+        } else if(os.contains("Windows") && System.getenv("APPDATA") != null) {
+            localDirectory = System.getenv("APPDATA")+"\\JRGSS\\"+title+"\\";
+        } else {
+            localDirectory = System.getProperty("user.home")+File.separator+".jrgss"+File.separator
+                            + title + File.separator;
+        }
+        File dir = new File(localDirectory);
+        dir.mkdirs();
+    }
 
     public static void setEncryptedArchive(EncryptedArchive archive) {
         FileUtil.archive = archive;
@@ -45,6 +61,12 @@ public class FileUtil {
     }
 
     public static FileHandle loadWithExtensions(String path, String[] extensions) {
+        for(String ext : extensions) {
+            File f = new File(localDirectory+File.separator+path + ext);
+            if(f.exists()) {
+                return new FileHandle(f);
+            }
+        }
         if(archive != null) {
             String convertedPath = path.replaceAll("/", "\\\\");
             for(String ext : extensions) {
@@ -70,15 +92,27 @@ public class FileUtil {
 
     public static RubyString rawLoadFile(String path) {
         path = path.replaceAll("\\\\", "/");
+        if(path.startsWith("/")) {
+            File f = new File(path);
+            if(f.exists()) {
+                //Gdx.app.log("FileUtil","Found "+path+" in Game folder.");
+                return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(f).readBytes());
+            }
+            return null;
+        }
+        File file = new File(localDirectory + File.separator +path.replaceAll("\\\\", File.separator));
+        if(file.exists()) {
+            return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(file).readBytes());
+        }
         if(archive != null) {
             String convertedPath = path.replaceAll("\\/", "\\\\");
             FileHandle f = archive.openFile(convertedPath);
             if( f != null) return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), f.readBytes());
         }
-        File f = new File(gameDirectory + File.separator +path.replaceAll("\\\\", File.separator));
-        if(f.exists()) {
+        file = new File(gameDirectory + File.separator +path.replaceAll("\\\\", File.separator));
+        if(file.exists()) {
             //Gdx.app.log("FileUtil","Found "+path+" in Game folder.");
-            return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(f).readBytes());
+            return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(file).readBytes());
         }
         return null;
     }

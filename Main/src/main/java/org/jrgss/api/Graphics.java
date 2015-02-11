@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by matty on 6/27/14.
@@ -78,7 +77,12 @@ public class Graphics {
     public static FrameBuffer tempBuffer;
     public static int desiredWidth = 544;
     public static int desiredHeight = 416;
+    private static int x = 0;
+    private static int y = 0;
+    private static int width = 0;
+    private static int height = 0;
     public static boolean fullscreen = false;
+    public static double scale = 1;
 
 
 
@@ -88,6 +92,18 @@ public class Graphics {
 
     public static int getHeight() {
         return desiredHeight;
+    }
+
+    public static void setWidth(int width) {
+        desiredWidth = width;
+        com.badlogic.gdx.Graphics.DisplayMode mode = Gdx.graphics.getDesktopDisplayMode();
+        updateDisplayParams(mode.width, mode.height);
+    }
+
+    public static void setHeight(int height) {
+        desiredHeight = height;
+        com.badlogic.gdx.Graphics.DisplayMode mode = Gdx.graphics.getDesktopDisplayMode();
+        updateDisplayParams(mode.width, mode.height);
     }
 
     public static FrameBuffer checkBufferSize(FrameBuffer buffer) {
@@ -103,8 +119,15 @@ public class Graphics {
         resize_screen(desiredWidth, desiredHeight);
     }
 
+    public static void setFullscreen(boolean fullscreen) {
+        if(fullscreen != Graphics.fullscreen) {
+            Graphics.fullscreen = fullscreen;
+            resize_screen(desiredWidth, desiredHeight);
+        }
+    }
+
     public static void init() {
-        resize_screen(800, 450);
+        resize_screen(desiredWidth, desiredHeight);
     }
 
     public static void resize_screen(int width, int height) {
@@ -114,15 +137,40 @@ public class Graphics {
         desiredWidth = width;
         if(!fullscreen) {
             Gdx.graphics.setDisplayMode(width, height, false);
+            x = 0;
+            y = 0;
+            Graphics.width = Gdx.graphics.getWidth();
+            Graphics.height = Gdx.graphics.getHeight();
+            scale = (float)Gdx.graphics.getWidth()/width;
         } else {
             com.badlogic.gdx.Graphics.DisplayMode mode = Gdx.graphics.getDesktopDisplayMode();
             Gdx.app.log("Graphics", "Fullscreen resolution is "+mode.width+"x"+mode.height);
             if(!Gdx.graphics.isFullscreen()) {
                 Gdx.graphics.setDisplayMode(mode.width, mode.height, true);
+                updateDisplayParams(mode.width, mode.height);
             }
+            scale = (float)Gdx.graphics.getWidth()/mode.width;
 
         }
-        Gdx.app.log("Graphics", "We are now at "+getWidth() + "x"+getHeight());
+        if(scale < 0.00) scale = 1.0;
+        Gdx.app.log("Graphics", "We are now at "+getWidth() + "x"+getHeight()+"@"+scale);
+    }
+
+    private static void updateDisplayParams(int width, int height) {
+        float ratio = (float)width/height;
+        float desiredRatio = (float)desiredWidth/desiredHeight;
+        if(ratio < desiredRatio) {
+            x = 0;
+            Graphics.width = width;
+            Graphics.height = (int)(width / desiredRatio);
+            y = (height - Graphics.height)/2;
+        } else {
+            y = 0;
+            Graphics.height = height;
+            Graphics.width = (int)(height * desiredRatio);
+            x = (width - Graphics.width)/2;
+        }
+
     }
 
     /*public static void render(SpriteBatch batch) {
@@ -229,17 +277,20 @@ public class Graphics {
 
             finalBatch.begin();
 
-            finalBatch.setColor(1f,1f,1f,1f);
-            finalBatch.draw(tempBuffer.getColorBufferTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
+            finalBatch.setColor(1f, 1f, 1f, 1f);
+            finalBatch.draw(tempBuffer.getColorBufferTexture(), x, y,
+                    width, height);
 
             if (backBuffer != null) {
                 finalBatch.setColor(1f, 1f, 1f, backBufferOpacity);
-                finalBatch.draw(backBuffer.getColorBufferTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
+                finalBatch.draw(backBuffer.getColorBufferTexture(), x, y,
+                        width, height);
             }
 
             if (brightness != 255) {
                 finalBatch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
-                finalBatch.draw(Sprite.getColorTexture(),0,0,Gdx.graphics.getWidth(),(Gdx.graphics.getWidth()/(float)desiredWidth) * desiredHeight);
+                finalBatch.draw(Sprite.getColorTexture(), x, y,
+                        width, height);
                 finalBatch.setColor(1f, 1f, 1f, 1f);
             }
 

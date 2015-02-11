@@ -11,6 +11,7 @@ import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.math.Vector3;
+import org.jrgss.JRGSSApplication;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
@@ -60,22 +61,33 @@ public class Input extends RubyObject {
 
     @JRubyMethod(module = true)
     public static void update(IRubyObject self) {
-        for (int i = 1; i < 256; i++) {
-            Boolean previous = isPressed.get(i);
-            if (previous == null) {
-                previous = Boolean.FALSE;
-            }
-            boolean current = Gdx.input.isKeyPressed(i);
-            updateKey(i, current, previous);
-        }
-        if (Controllers.getControllers().size > 0) {
-            for (int i = 0; i < 16; i++) {
-                Boolean previous = isPressed.get(gamepadButton(i));
+        //Controller initialization crashes if the window is not focused the first time it's called on OSX
+        // This is a workaround. To make this less jarring, when you lose focus we simulate the release
+        // of all buttons (on the keyboard too
+        if (((JRGSSApplication)Gdx.app).isFocused()) {
+            for (int i = 1; i < 256; i++) {
+                Boolean previous = isPressed.get(i);
                 if (previous == null) {
                     previous = Boolean.FALSE;
                 }
-                boolean current = Controllers.getControllers().get(0).getButton(i);
-                updateKey(gamepadButton(i), current, previous);
+                boolean current = Gdx.input.isKeyPressed(i);
+                updateKey(i, current, previous);
+            }
+
+            if (Controllers.getControllers().size > 0) {
+                for (int i = 0; i < 16; i++) {
+                    Boolean previous = isPressed.get(gamepadButton(i));
+                    if (previous == null) {
+                        previous = Boolean.FALSE;
+                    }
+                    boolean current = Controllers.getControllers().get(0).getButton(i);
+                    updateKey(gamepadButton(i), current, previous);
+                }
+            }
+        } else {
+            //Simulate button release when switching away from app
+            for(Map.Entry<Integer, Boolean> entry : isPressed.entrySet()) {
+                updateKey(entry.getKey(), Boolean.FALSE, entry.getValue());
             }
         }
 

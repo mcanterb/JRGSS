@@ -8,4 +8,5 @@ import com.badlogic.gdx.Application;
  */
 public interface JRGSSApplication extends Application {
     public void handlePlatform();
+    public boolean isFocused();
 }

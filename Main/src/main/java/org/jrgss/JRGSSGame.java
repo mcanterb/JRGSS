@@ -2,15 +2,12 @@ package org.jrgss;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.ControllerListener;
-import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import org.jrgss.api.*;
+import org.jrgss.api.Graphics;
 import org.jrgss.rgssa.EncryptedArchive;
 import org.jruby.*;
 import org.jruby.embed.LocalContextScope;
@@ -19,6 +16,7 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.ThreadContext;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
@@ -52,6 +50,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
         super();
         JRGSSGame.ini = ini; //Pretty shitty, but JRGSSGame should be a singleton
         JRGSSGame.JRGSS_DIR = jrgssDir;
+        FileUtil.setLocalDirectory(ini.getTitle());
         RGSSVersion rgss = ini.getRGSSVersion();
         if(rgss != RGSSVersion.VXAce) {
             int result = JOptionPane.showConfirmDialog(null, "This game uses an unsupported version of RGSS. This game is for "+
@@ -119,9 +118,9 @@ public class JRGSSGame implements JRGSSApplicationListener {
             String str2 = (String)scriptingContainer.runScriptlet("Zlib::Inflate.inflate($__obj[2]).force_encoding(\"utf-8\")");
             try{
                 String script = str2.replaceAll("\r\n","\n");
-                try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
+                /*try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
                     writer.write("# encoding: UTF-8\n" + script);
-                }
+                }*/
                 scriptingContainer.setScriptFilename(name);
                 scriptingContainer.runScriptlet("# encoding: UTF-8\n" + script);
             }catch (Exception e) {
@@ -159,6 +158,9 @@ public class JRGSSGame implements JRGSSApplicationListener {
 
     @Override
     public void create() {
+        if(SplashScreen.getSplashScreen()!=null) {
+            SplashScreen.getSplashScreen().close();
+        }
         glThread = Thread.currentThread();
 
         camera = new OrthographicCamera(Graphics.getWidth(), Graphics.getHeight());
@@ -255,7 +257,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
     public void loadScripts() {
         scriptingContainer = new ScriptingContainer(LocalContextScope.SINGLETON, LocalVariableBehavior.PERSISTENT);
         scriptingContainer.setCompatVersion(CompatVersion.RUBY1_9);
-        scriptingContainer.setCompileMode(RubyInstanceConfig.CompileMode.JIT);
+        scriptingContainer.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
         scriptingContainer.setRunRubyInProcess(true);
         scriptingContainer.runScriptlet("$TEST=true");
         scriptingContainer.runScriptlet("require 'java'");
@@ -266,6 +268,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
 
         loadRPGModule();
         scriptingContainer.put("$_jrgss_home", FileUtil.gameDirectory);
+        scriptingContainer.put("$_jrgss_paths", new String[]{FileUtil.localDirectory, FileUtil.gameDirectory});
         loadScriptData(ini.getScripts());
         //loadScriptsFromDirectory("/Users/matt/VidarScripts");
         //Gdx.app.log("JRGSSGame", scriptingContainer.runScriptlet("load_data(\"Data/Map101.rvdata2\")").toString());

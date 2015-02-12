@@ -1,16 +1,8 @@
 package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.controllers.PovDirection;
-import com.badlogic.gdx.math.Vector3;
 import org.jrgss.JRGSSApplication;
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -18,6 +10,9 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by matty on 6/27/14.
@@ -200,6 +195,7 @@ public class Input extends RubyObject {
         bindings.put(X, new int[]{Keys.A, XBOXButtons.X.key()});
         bindings.put(Y, new int[]{Keys.S, XBOXButtons.Y.key()});
         bindings.put(Z, new int[]{Keys.D, XBOXButtons.START.key()});
+        bindings.put(A, new int[]{Keys.SHIFT_LEFT, Keys.SHIFT_RIGHT});
         bindings.put(SHIFT, new int[]{Keys.SHIFT_LEFT, Keys.SHIFT_RIGHT});
         bindings.put(ALT, new int[]{Keys.ALT_LEFT, Keys.ALT_RIGHT});
         bindings.put(CTRL, new int[]{Keys.CONTROL_LEFT, Keys.CONTROL_RIGHT});

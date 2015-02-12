@@ -29,7 +29,9 @@ public class Desktop {
             cfg.resizable = false;
             cfg.useHDPI = true;
             cfg.fullscreen = false;
-            cfg.addIcon(args[2] + File.separator + "icon.png", Files.FileType.Absolute);
+            if(!System.getProperty("os.name").toLowerCase().contains("linux")) {
+                cfg.addIcon(args[2] + File.separator + "icon.png", Files.FileType.Absolute);
+            }
             ConfigReader config = new ConfigReader(args[0] + File.separator + "Game.ini");
             cfg.title = config.getTitle();
             setDockIconIfOnOSX(args[2] + File.separator + "icon.png");

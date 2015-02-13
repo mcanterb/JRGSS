@@ -30,7 +30,6 @@ import static org.jrgss.JRGSSGame.runWithGLContext;
 @Data
 @ToString(exclude = {"camera", "font", "frameBuffer", "region", "pixmap"})
 public class Bitmap {
-    static HashMap<String, Pixmap> cache = new HashMap<>();
     String path;
     Font font = new Font();
     int width;
@@ -67,13 +66,9 @@ public class Bitmap {
     public Bitmap(String path) {
         long t = System.currentTimeMillis();
         final Pixmap img;
-        if (cache.containsKey(path)) {
-            img = cache.get(path);
-        } else {
-            FileHandle file = FileUtil.loadImg(path);
-            img = new Pixmap(file);
-            cache.put(path, img);
-        }
+        FileHandle file = FileUtil.loadImg(path);
+        img = new Pixmap(file);
+
         long endTime = System.currentTimeMillis();
         this.path = path;
         runWithGLContext(new Runnable() {
@@ -355,6 +350,8 @@ public class Bitmap {
 
     public void dispose() {
         isDisposed = true;
+        if(isDisposed) return;
+        Gdx.app.log("Bitmap","Calling dispose for "+path);
         if (frameBuffer != null) {
             runWithGLContext(new Runnable() {
                 FrameBuffer fb = frameBuffer;
@@ -366,6 +363,9 @@ public class Bitmap {
             });
             frameBuffer = null;
         }
+        if(pixmap != null) pixmap.dispose();
+        if(region != null) region.getTexture().dispose();
+        if(batch != null) batch.dispose();
     }
 
     public void blur() {
@@ -374,7 +374,7 @@ public class Bitmap {
             public void run() {
                 Pixmap p = getPixmap();
                 IntBuffer inPixels = p.getPixels().asIntBuffer();
-                Gdx.app.log("Graphics", "Length of IntBuffer = "+inPixels.remaining());
+                Gdx.app.log("Graphics", "Length of IntBuffer = " + inPixels.remaining());
                 IntBuffer outPixels = IntBuffer.allocate(inPixels.remaining());
                 blur(inPixels, outPixels, getWidth(), getHeight(), 2);
                 blur(outPixels, inPixels, getHeight(), getWidth(), 2);
@@ -554,8 +554,8 @@ public class Bitmap {
             public void run() {
                 BitmapFont f = font.getBitmapFont();
                 BitmapFont.TextBounds bounds = f.getBounds(string);
-                if(bounds.width > width) {
-                    float xScale = Math.max(0.6f, width/bounds.width);
+                if (bounds.width > width) {
+                    float xScale = Math.max(0.6f, width / bounds.width);
                     batch.setProjectionMatrix(camera.combined.cpy().scale(xScale, 1.0f, 1.0f));
                 } else {
                     batch.setProjectionMatrix(camera.combined);

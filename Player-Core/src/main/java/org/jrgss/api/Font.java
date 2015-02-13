@@ -137,6 +137,7 @@ public class Font {
         if(fontCache.containsKey(new FontCacheKey(size, fontPath))) {
             bitmapFont = fontCache.get(new FontCacheKey(size, fontPath));
         } else {
+            Gdx.app.log("Font", "Generating new font");
             JRGSSGame.runWithGLContext(new Runnable() {
                 @Override
                 public void run() {

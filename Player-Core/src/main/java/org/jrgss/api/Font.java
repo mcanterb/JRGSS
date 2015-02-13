@@ -33,6 +33,25 @@ public class Font {
     String[] name;
 
 
+    private static String getOSFontDir() {
+        String osName = System.getProperty("os.name");
+        if(osName.toLowerCase().contains("mac")) {
+            return "/Library/Fonts";
+        }
+        return null;
+    }
+
+    private static String getOSFont(String name, boolean bold, boolean italic) {
+        String ret = getOSFontDir()+File.separator+name;
+        if(bold) {
+            ret = ret+" Bold";
+        }
+        if(italic) {
+            ret = ret+" Italic";
+        }
+        return ret+".ttf";
+    }
+
     public Font() {
         this(default_name());
     }
@@ -41,26 +60,10 @@ public class Font {
         this(name, default_size);
     }
 
-    public Font(String[] name, final int size) {
+    public Font(final String[] name, final int size) {
         this.size = size;
         this.name = name;
-        if (fontCache.containsKey(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"))) {
-            bitmapFont = fontCache.get(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
-        } else {
-            JRGSSGame.runWithGLContext(new Runnable() {
-                @Override
-                public void run() {
-                    FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
-                    FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size *0.80);
-                    param.flip = true;
-                    param.genMipMaps = false;
-                    bitmapFont = generator.generateFont(param);
-                    fontCache.put(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"), bitmapFont);
-                    generator.dispose();
-                }
-            });
-        }
+        update();
 
     }
 
@@ -109,25 +112,46 @@ public class Font {
 
     public void setSize(final int size) {
         this.size = size;
-        if (fontCache.containsKey(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"))) {
-            bitmapFont = fontCache.get(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
+        update();
+
+    }
+
+    public void setBold(boolean bold) {
+        if(this.bold != bold) {
+            this.bold = bold;
+            update();
+        }
+    }
+
+    public void setItalic(boolean italic) {
+        if(this.italic != italic) {
+            this.italic = italic;
+            update();
+        }
+    }
+
+
+
+    private void update() {
+        final String fontPath = FileUtil.rtpDirectory+File.separator+"Fonts"+File.separator+"VL-Gothic-Regular.ttf";
+        if(fontCache.containsKey(new FontCacheKey(size, fontPath))) {
+            bitmapFont = fontCache.get(new FontCacheKey(size, fontPath));
         } else {
             JRGSSGame.runWithGLContext(new Runnable() {
                 @Override
                 public void run() {
-                    FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"));
+                    FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(fontPath));
                     FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                    param.size = (int)(size *0.80);
+                    param.size = (int) (size*.80);
                     param.flip = true;
                     param.genMipMaps = false;
                     bitmapFont = generator.generateFont(param);
-                    fontCache.put(new FontCacheKey(size, FileUtil.rtpDirectory + File.separator + "Fonts" + File.separator + "VL-Gothic-Regular.ttf"), bitmapFont);
+                    fontCache.put(new FontCacheKey(size, fontPath), bitmapFont);
                     generator.dispose();
 
                 }
             });
         }
-
     }
 
     @Data

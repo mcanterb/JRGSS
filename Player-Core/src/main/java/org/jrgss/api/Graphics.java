@@ -152,7 +152,7 @@ public class Graphics {
             scale = (float)Gdx.graphics.getWidth()/mode.width;
 
         }
-        if(scale < 0.00) scale = 1.0;
+        if(scale < 0.01) scale = 1.0;
         Gdx.app.log("Graphics", "We are now at "+getWidth() + "x"+getHeight()+"@"+scale);
     }
 

@@ -47,7 +47,7 @@ public class Bitmap {
         OrthographicCamera camera = new OrthographicCamera();
         camera.setToOrtho(false, img.getWidth(), img.getHeight());
         img.getPixels().rewind();
-        SpriteBatch batch = new SpriteBatch();
+        batch = new SpriteBatch();
         batch.setProjectionMatrix(camera.combined);
         frameBuffer.begin();
         batch.begin();
@@ -57,7 +57,6 @@ public class Bitmap {
         batch.end();
         frameBuffer.end();
         region = new TextureRegion(new Texture(img));
-        batch.dispose();
 
         this.width = img.getWidth();
         this.height = img.getHeight();
@@ -83,7 +82,7 @@ public class Bitmap {
                 frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, img.getWidth(), img.getHeight(), false);
                 OrthographicCamera camera = new OrthographicCamera();
                 camera.setToOrtho(false, img.getWidth(), img.getHeight());
-                SpriteBatch batch = new SpriteBatch();
+                batch = new SpriteBatch();
                 batch.setProjectionMatrix(camera.combined);
                 frameBuffer.begin();
                 batch.begin();
@@ -93,7 +92,6 @@ public class Bitmap {
                 batch.end();
                 frameBuffer.end();
                 region = new TextureRegion(frameBuffer.getColorBufferTexture());
-                batch.dispose();
             }
         });
         this.width = img.getWidth();
@@ -121,6 +119,7 @@ public class Bitmap {
                 Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
                 frameBuffer.end();
                 region = new TextureRegion(frameBuffer.getColorBufferTexture());
+                batch = new SpriteBatch();
             }
         });
         clear();
@@ -294,7 +293,7 @@ public class Bitmap {
 
     public Rect text_size(final String str) {
         BitmapFont.TextBounds bounds = font.bitmapFont.getBounds(str);
-        return new Rect(0, 0, (int) bounds.width, (int) bounds.height);
+        return new Rect(0, 0, (int) bounds.width, (int) (font.bitmapFont.getCapHeight()));
     }
 
     public Rect rect() {
@@ -545,6 +544,8 @@ public class Bitmap {
         pixmap = null;
     }
 
+    SpriteBatch batch;
+
     public void draw_text(final int x, final int y, final int width, final int height, final Object obj,
                           final int align) {
         final String string = obj.toString();
@@ -553,6 +554,12 @@ public class Bitmap {
             public void run() {
                 BitmapFont f = font.getBitmapFont();
                 BitmapFont.TextBounds bounds = f.getBounds(string);
+                if(bounds.width > width) {
+                    float xScale = Math.max(0.6f, width/bounds.width);
+                    batch.setProjectionMatrix(camera.combined.cpy().scale(xScale, 1.0f, 1.0f));
+                } else {
+                    batch.setProjectionMatrix(camera.combined);
+                }
                 int drawX = x;
                 if (align == 2) {
                     drawX += width - bounds.width;
@@ -561,14 +568,13 @@ public class Bitmap {
                 }
                 int drawY = y + (int) (height - bounds.height) / 2;
                 //Gdx.app.log("Bitmap", "Drawing text " + string + ". Colors " + font.getColor() + " " + f.getScaleX());
-                SpriteBatch batch = new SpriteBatch();
-                batch.setProjectionMatrix(camera.combined);
+
+
                 Color outColor = font.getOut_color();
                 Color innerColor = font.getColor();
                 //f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
                 frameBuffer.begin();
                 batch.begin();
-                //batch.disableBlending();
 
                 f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
                 f.draw(batch, string, drawX - 1.3f, drawY);
@@ -581,15 +587,15 @@ public class Bitmap {
                 f.draw(batch, string, drawX - 1.3f, drawY + 1.3f);
                 batch.flush();
                 batch.setShader(TextShaderProgram.get());
-                //batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ZERO);
+                //batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ZERO);*/
+
                 f.setColor(innerColor.red / 255f, innerColor.green / 255f, innerColor.blue / 255f, innerColor.alpha / 255f);
                 f.draw(batch, string, drawX, drawY);
 
 
                 batch.end();
-                batch.setShader(null);
-                batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
                 frameBuffer.end();
+                batch.setProjectionMatrix(camera.combined);
                 if (path == null) {
                     path = string;
                 } else {

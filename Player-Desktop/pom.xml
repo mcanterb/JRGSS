@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jrgss</groupId>
-    <artifactId>Desktop</artifactId>
+    <artifactId>Player-Desktop</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
             <groupId>org.jrgss</groupId>
-            <artifactId>Main</artifactId>
+            <artifactId>Player-Core</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>

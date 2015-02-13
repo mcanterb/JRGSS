@@ -54,8 +54,8 @@ public class Plane extends Sprite {
             int tileWidth = (int)(src_rect.getWidth()*zoom_x);
             int tileHeight = (int)(src_rect.getHeight()*zoom_y);
 
-            int startX = (viewportX - ox);
-            int startY = (viewportY - oy);
+            int startX = Math.abs((viewportX - ox)%viewportWidth);
+            int startY = Math.abs((viewportY - oy)%viewportHeight);
 
 
 

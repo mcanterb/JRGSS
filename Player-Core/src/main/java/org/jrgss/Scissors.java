@@ -7,9 +7,11 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import com.sun.corba.se.impl.orbutil.graph.Graph;
 import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jrgss.api.Graphics;
 
 /**
  * @author matt
@@ -85,7 +87,7 @@ public class Scissors {
     /** Calculates a scissor rectangle using 0,0,Gdx.graphics.getWidth(),Gdx.graphics.getHeight() as the viewport.
      * @see #calculateScissors(com.badlogic.gdx.graphics.Camera, float, float, float, float, com.badlogic.gdx.math.Matrix4, Rectangle, Rectangle) */
     public static void calculateScissors (Camera camera, Matrix4 batchTransform, Rectangle area, Rectangle scissor) {
-        calculateScissors(camera, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), batchTransform, area, scissor);
+        calculateScissors(camera, 0, 0, Graphics.getWidth(), Graphics.getHeight(), batchTransform, area, scissor);
     }
 
     /** Calculates a scissor rectangle in OpenGL ES window coordinates from a {@link Camera}, a transformation {@link Matrix4} and

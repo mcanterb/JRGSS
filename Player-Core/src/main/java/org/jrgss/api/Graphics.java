@@ -244,32 +244,22 @@ public class Graphics {
         }
     }
 
+    private static long lastFrame = 0;
+    private static SpriteBatch finalBatch;
+
+
     public static void render(SpriteBatch batch) {
+
         tempBuffer = checkBufferSize(tempBuffer);
         GL20 gl = Gdx.gl;
         Gdx.gl.glClearColor(0, 0, 0, 0f);
         gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_STENCIL_BUFFER_BIT);
-        if (transitioning) {
 
-
-            batch.begin();
-            batch.draw(backBuffer.getColorBufferTexture(), 0, 0);
-            batch.end();
-            batch.setShader(TransitionShaderProgram.get());
-            batch.begin();
-            TransitionShaderProgram.get().begin();
-            TransitionShaderProgram.get().setFade(transitionFade);
-            TransitionShaderProgram.get().setVague(vague);
-            batch.draw(transitionTexture, 0, 0, getWidth(), getHeight());
-            batch.end();
-            batch.setShader(null);
-
-        } else {
-
-            tempBuffer.begin();
-            renderToBoundFramebuffer(batch);
-            tempBuffer.end();
-            SpriteBatch finalBatch = new SpriteBatch();
+        /*if(lastFrame == 0) lastFrame = System.nanoTime();
+        long targetTimePass = 1000000000L/frame_rate;
+        long delta = System.nanoTime() - lastFrame;
+        if(delta > (targetTimePass+1000000)) {
+            if(finalBatch == null) finalBatch = new SpriteBatch();
             OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
             camera.setToOrtho(true);
             camera.update();
@@ -295,11 +285,61 @@ public class Graphics {
             }
 
             finalBatch.end();
-            finalBatch.dispose();
+            lastFrame = System.nanoTime();
+            frame_count++;
+            return;
+        }*/
+
+        if (transitioning) {
+
+
+            batch.begin();
+            batch.draw(backBuffer.getColorBufferTexture(), 0, 0);
+            batch.end();
+            batch.setShader(TransitionShaderProgram.get());
+            batch.begin();
+            TransitionShaderProgram.get().begin();
+            TransitionShaderProgram.get().setFade(transitionFade);
+            TransitionShaderProgram.get().setVague(vague);
+            batch.draw(transitionTexture, 0, 0, getWidth(), getHeight());
+            batch.end();
+            batch.setShader(null);
+
+        } else {
+
+            tempBuffer.begin();
+            renderToBoundFramebuffer(batch);
+            tempBuffer.end();
+            if(finalBatch == null) finalBatch = new SpriteBatch();
+            OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+            camera.setToOrtho(true);
+            camera.update();
+            finalBatch.setProjectionMatrix(camera.combined);
+
+            finalBatch.begin();
+
+            finalBatch.setColor(1f, 1f, 1f, 1f);
+            finalBatch.draw(tempBuffer.getColorBufferTexture(), x, y,
+                    width, height);
+
+            if (backBuffer != null) {
+                finalBatch.setColor(1f, 1f, 1f, backBufferOpacity);
+                finalBatch.draw(backBuffer.getColorBufferTexture(), x, y,
+                        width, height);
+            }
+
+            if (brightness != 255) {
+                finalBatch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
+                finalBatch.draw(Sprite.getColorTexture(), x, y,
+                        width, height);
+                finalBatch.setColor(1f, 1f, 1f, 1f);
+            }
+
+            finalBatch.end();
 
         }
         frame_count++;
-
+        lastFrame = System.nanoTime();
     }
 
     public static void update() {

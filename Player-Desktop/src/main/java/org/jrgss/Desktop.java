@@ -31,6 +31,10 @@ public class Desktop {
             cfg.fullscreen = false;
             if(!System.getProperty("os.name").toLowerCase().contains("linux")) {
                 cfg.addIcon(args[2] + File.separator + "icon.png", Files.FileType.Absolute);
+
+            } else {
+                FileUtil.onCaseSensitiveFileSystem = true;
+                System.out.println("Using Case Insensitive File lookups!");
             }
             ConfigReader config = new ConfigReader(args[0] + File.separator + "Game.ini");
             cfg.title = config.getTitle();

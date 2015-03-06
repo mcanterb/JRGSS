@@ -259,7 +259,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
         scriptingContainer.setCompatVersion(CompatVersion.RUBY1_9);
         scriptingContainer.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
         scriptingContainer.setRunRubyInProcess(true);
-        scriptingContainer.runScriptlet("$TEST=true");
+        //scriptingContainer.runScriptlet("$TEST=true");
         scriptingContainer.runScriptlet("require 'java'");
         scriptingContainer.runScriptlet("require 'org/jrgss/api/RGSSBuiltin'");
         for(String module: BUILTINS) {

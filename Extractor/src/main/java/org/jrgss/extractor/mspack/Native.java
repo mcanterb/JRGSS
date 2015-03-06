@@ -60,7 +60,7 @@ public class Native {
             return null;
         }
         String resourceName = resourceName();
-        InputStream is = com.sun.jna.Native.class.getResourceAsStream(resourceName);
+        InputStream is = Native.class.getResourceAsStream(resourceName);
         if (is == null) {
             throw new UnsupportedOperationException("Unsupported OS/arch, cannot find " + resourceName + ". Please try building from source.");
         }

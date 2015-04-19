@@ -86,7 +86,7 @@ public class Font {
 
 
     public static String[] default_name() {
-        return new String[]{"VL Gothic", "Verdana", "Arial", "Courier New"};
+        return new String[]{"Verdana", "Arial", "Courier New"};
     }
 
     public static boolean default_bold() {

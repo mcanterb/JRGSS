@@ -18,6 +18,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.*;
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.SharedDrawable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -164,7 +165,7 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
     public void handlePlatform() {
         Display.processMessages();
         if (Display.isCloseRequested()) exit();
-        hideMouse();
+
         boolean isActive = Display.isActive();
         if (wasActive && !isActive) { // if it's just recently minimized from active state
             wasActive = false;
@@ -182,7 +183,7 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
                     listener.resume();
             }
         }
-
+        hideMouse();
         boolean shouldRender = false;
 
         if (graphics.canvas != null) {
@@ -236,6 +237,25 @@ public class JRGSSDesktop extends LwjglApplication implements JRGSSApplication{
     @Override
     public boolean isFocused() {
         return Display.isActive();
+    }
+
+    @Override
+    public void releaseContext() {
+        try {
+            Display.releaseContext();
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    @Override
+    public void acquireContext() {
+        try {
+            Display.makeCurrent();
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private org.lwjgl.input.Cursor emptyCursor;

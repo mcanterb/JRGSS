@@ -30,7 +30,8 @@ public class JRGSSGame implements JRGSSApplicationListener {
     final String[] BUILTINS = new String[] {
             "Audio", "Bitmap", "Color", "Font", "Graphics",
             "Plane", "Rect", "RGSSError", "Sprite",
-            "Tilemap", "Tone", "Viewport", "Window"
+            "Tilemap", "Tone", "Viewport", "Window",
+            "RGSSReset"
     };
     public static final Queue<FutureTask<?>> glRunnables = new ConcurrentLinkedQueue<>();
 
@@ -118,9 +119,10 @@ public class JRGSSGame implements JRGSSApplicationListener {
             String str2 = (String)scriptingContainer.runScriptlet("Zlib::Inflate.inflate($__obj[2]).force_encoding(\"utf-8\")");
             try{
                 String script = str2.replaceAll("\r\n","\n");
-                /*try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
+                try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
                     writer.write("# encoding: UTF-8\n" + script);
-                }*/
+                }
+                System.out.println("Saving /Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb");
                 scriptingContainer.setScriptFilename(name);
                 scriptingContainer.runScriptlet("# encoding: UTF-8\n" + script);
             }catch (Exception e) {
@@ -231,23 +233,6 @@ public class JRGSSGame implements JRGSSApplicationListener {
             buttonTrigger = false;
         }
 
-        if(!override && Gdx.input.isKeyPressed(Input.Keys.F2)) {
-            String script = "npc1 = :Etel\n" +
-                    "npc2 = :Elek\n" +
-                    "npc3 = :Dorottya\n" +
-                    "#END TEST SECTION\n" +
-                    "$game_variables[138] = $npc_hash[npc1].actor_id\n" +
-                    "$game_variables[139] = $npc_hash[npc2].actor_id\n" +
-                    "$game_variables[140] = $npc_hash[npc3].actor_id\n" +
-                    "$npc_hash[npc1].grave_location = [21,11]\n" +
-                    "$npc_hash[npc2].grave_location = [24,9]\n" +
-                    "$npc_hash[npc3].grave_location = [11,9]\n" +
-                    "$npc_hash[npc1].kill\n" +
-                    "$npc_hash[npc2].kill\n" +
-                    "$npc_hash[npc3].kill";
-            scriptingContainer.runScriptlet(script);
-            override = true;
-        }
 
     }
 
@@ -269,8 +254,8 @@ public class JRGSSGame implements JRGSSApplicationListener {
         loadRPGModule();
         scriptingContainer.put("$_jrgss_home", FileUtil.gameDirectory);
         scriptingContainer.put("$_jrgss_paths", new String[]{FileUtil.localDirectory, FileUtil.gameDirectory});
-        loadScriptData(ini.getScripts());
-        //loadScriptsFromDirectory("/Users/matt/VidarScripts");
+        //loadScriptData(ini.getScripts());
+        loadScriptsFromDirectory("/Users/matt/VidarScripts");
         //Gdx.app.log("JRGSSGame", scriptingContainer.runScriptlet("load_data(\"Data/Map101.rvdata2\")").toString());
     }
 

@@ -34,7 +34,7 @@ class << File
     def open(path, *args, &block)
         if path.start_with?("/")
             puts "Doing absolute file "+path
-            return jrgss_open(*args, &block)
+            return jrgss_open(path, *args, &block)
         end
         exception = nil
         FileUtils.mkdir_p(File.join($_jrgss_paths[0],File.dirname(path)))
@@ -60,7 +60,12 @@ def load_data(filename)
     filename = filename.gsub("\\", "/")
     puts 'Loading Data for '+filename
     f = Java::OrgJrgss::FileUtil::rawLoadFile(filename)
-    obj = Marshal.load(f)
+    begin
+        obj = Marshal.load(f)
+    rescue Exception => e
+        puts e.backtrace
+        obj = f
+    end
 
     obj
 end

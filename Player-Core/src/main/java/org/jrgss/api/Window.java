@@ -218,6 +218,7 @@ public class Window extends AbstractRenderable {
         batch.setShader(ToneShaderProgram.get());
         ToneShaderProgram.get().begin();
         ToneShaderProgram.get().setTone(tone);
+        ToneShaderProgram.get().setAlpha(true);
         this.batch.begin();
         batch.setColor(1.0f, 1.0f, 1.0f, (back_opacity / 255f) * globalOpacity);
         batch.draw(background, x + 4, y + 4, width - 4 * 2, height - 4 * 2);

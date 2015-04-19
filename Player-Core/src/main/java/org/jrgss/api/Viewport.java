@@ -58,14 +58,14 @@ public class Viewport extends AbstractRenderable {
 
     @Override
     public void render(SpriteBatch batch) {
-        if (flashColor != null) {
+        if (flashColor != null && flashColor.getAlpha() != 0) {
             batch.setColor(flashColor.getRed() / 255f, flashColor.getGreen() / 255f, flashColor.getBlue() / 255f, flashColor.getAlpha() / 255f);
             batch.enableBlending();
             batch.begin();
             batch.draw(Sprite.getColorTexture(), rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight());
             batch.end();
         }
-        if(color != null) {
+        if(color != null && color.getAlpha() != 0) {
             batch.setColor(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
             batch.enableBlending();
             batch.begin();
@@ -84,6 +84,7 @@ public class Viewport extends AbstractRenderable {
             batch.setShader(ToneShaderProgram.get());
             ToneShaderProgram.get().begin();
             ToneShaderProgram.get().setTone(tone);
+            ToneShaderProgram.get().setAlpha(false);
             batch.draw(Graphics.tempBuffer.getColorBufferTexture(),0,0);
             batch.end();
             tempBuffer.end();

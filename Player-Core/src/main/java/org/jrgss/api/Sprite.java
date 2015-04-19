@@ -104,10 +104,10 @@ public class Sprite extends AbstractRenderable {
                 + "void main()\n"//
                 + "{\n" //
                 + "  vec4 v_texColor =  v_color * texture2D(u_texture, v_texCoords);"
-                //+ "  v_texColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*(1.0-blend_color.w)), \n"
-                //+ "                       (blend_color.y*blend_color.w)+(v_texColor.y*(1.0-blend_color.w)), \n"
-                //+ "                       (blend_color.z*blend_color.w)+(v_texColor.z*(1.0-blend_color.w)), \n"
-                //+ "                        v_texColor.w );\n"
+                + "  v_texColor = vec4( (blend_color.x*blend_color.w)+(v_texColor.x*(1.0-blend_color.w)), \n"
+                + "                       (blend_color.y*blend_color.w)+(v_texColor.y*(1.0-blend_color.w)), \n"
+                + "                       (blend_color.z*blend_color.w)+(v_texColor.z*(1.0-blend_color.w)), \n"
+                + "                        v_texColor.w );\n"
                 + "  float gray = v_texColor.x*0.149 + v_texColor.y*0.29412 + v_texColor.z*0.0588;\n"
                 + "  gl_FragColor = vec4( min(max(tone.x + v_texColor.x + (gray - v_texColor.x)*tone.w, 0.0 ), 1.0),\n"
                 + "                         min(max(tone.y + v_texColor.y + (gray - v_texColor.y)*tone.w, 0.0 ), 1.0),\n"
@@ -158,9 +158,9 @@ public class Sprite extends AbstractRenderable {
             int viewportX = viewport == null?0:(viewport.rect.x - viewport.ox);
             int viewportY = viewport == null?0:(viewport.rect.y - viewport.oy);
             com.badlogic.gdx.graphics.Color gdxBlend = color.toGDX();
-            batch.setColor((1f-gdxBlend.a) + (gdxBlend.r*gdxBlend.a) , (1f-gdxBlend.a) + (gdxBlend.g*gdxBlend.a), (1f-gdxBlend.a) + (gdxBlend.b*gdxBlend.a), (opacity / 255f));
+            batch.setColor(1f , 1f, 1f, (opacity / 255f));
             getAlphaBlendingShader().begin();
-            //getAlphaBlendingShader().setUniformf("blend_color", color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, (color.getAlpha() / 255f));
+            getAlphaBlendingShader().setUniformf("blend_color", gdxBlend.r, gdxBlend.g, gdxBlend.b, gdxBlend.a);
             setShaderTone(tone);
 
             switch (blend_type) {

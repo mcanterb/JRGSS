@@ -30,10 +30,7 @@ public class Color implements Serializable,Cloneable{
     }
 
     public void set(Color c) {
-        red = c.red;
-        green = c.green;
-        blue = c.blue;
-        alpha = c.alpha;
+        set(c.red, c.green, c.blue, c.alpha);
     }
 
     public void set(int r, int g, int b) {
@@ -41,10 +38,10 @@ public class Color implements Serializable,Cloneable{
     }
 
     public void set(int r, int g, int b, int alpha) {
-        this.red = r;
-        this.green = g;
-        this.blue = b;
-        this.alpha = alpha;
+        this.red = clamp(r, 0, 255);
+        this.green = clamp(g, 0, 255);
+        this.blue = clamp(b, 0, 255);
+        this.alpha = clamp(alpha, 0, 255);
     }
 
     public static Color _load(RubyString rubyString) {
@@ -82,5 +79,9 @@ public class Color implements Serializable,Cloneable{
 
     protected com.badlogic.gdx.graphics.Color toGDX() {
         return new com.badlogic.gdx.graphics.Color(red/255f, green/255f, blue/255f, alpha/255f);
+    }
+
+    int clamp(int x, int low, int high) {
+        return Math.min(Math.max(x, low), high);
     }
 }

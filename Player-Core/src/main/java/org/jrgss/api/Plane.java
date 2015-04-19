@@ -34,8 +34,10 @@ public class Plane extends Sprite {
             int viewportWidth = viewport == null?Graphics.getWidth():viewport.rect.getWidth();
             int viewportHeight = viewport == null?Graphics.getHeight():viewport.rect.getHeight();
             com.badlogic.gdx.graphics.Color gdxBlend = color.toGDX();
-            batch.setColor((1f-gdxBlend.a) + (gdxBlend.r*gdxBlend.a) , (1f-gdxBlend.a) + (gdxBlend.g*gdxBlend.a), (1f-gdxBlend.a) + (gdxBlend.b*gdxBlend.a), (opacity / 255f));
+            batch.setColor(1f , 1f, 1f, (opacity / 255f));
+
             getAlphaBlendingShader().begin();
+            getAlphaBlendingShader().setUniformf("blend_color", gdxBlend.r, gdxBlend.g, gdxBlend.b, gdxBlend.a);
             setShaderTone(tone);
             switch (blend_type) {
                 case 0:

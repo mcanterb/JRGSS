@@ -23,8 +23,8 @@ import java.util.Optional;
 @Data
 public class FileUtil {
 
-    final static String[] IMG_EXTENSIONS = new String[] {".bmp", ".png", ".jpg", ".jpeg", ".jpg.png"};
-    final static String[] AUDIO_EXTENSIONS = new String[] {".ogg",".ogx", ".wav", ".mp3"};
+    final static String[] IMG_EXTENSIONS = new String[] {"",".bmp", ".png", ".jpg", ".jpeg", ".jpg.png"};
+    final static String[] AUDIO_EXTENSIONS = new String[] {"",".ogg",".ogx", ".wav", ".mp3"};
     static EncryptedArchive archive = null;
     public static String gameDirectory = null;
     public static String rtpDirectory = null;

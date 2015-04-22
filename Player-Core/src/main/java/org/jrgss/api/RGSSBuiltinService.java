@@ -10,7 +10,11 @@ import org.jruby.runtime.load.BasicLibraryService;
 
 import java.awt.image.Kernel;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author matt
@@ -18,16 +22,21 @@ import java.lang.reflect.Field;
  */
 @Data
 public class RGSSBuiltinService implements BasicLibraryService {
+    private static final List<Class<? extends RubyObject>> builtInClasses =
+            new ArrayList<Class<? extends RubyObject>>() {{
+                add(Table.class);
+                add(Color.class);
+                add(Font.class);
+            }};
+
     private Ruby runtime;
 
 
     @Override
     public boolean basicLoad(Ruby runtime) throws IOException {
         this.runtime = runtime;
-        RubyClass tableClass = runtime.defineClass("Table", runtime.getObject(), Table::new);
-        tableClass.defineAnnotatedMethods(Table.class);
-        Table.runtime = runtime;
-        Table.rubyClass = tableClass;
+
+        builtInClasses.forEach(this::setupClass);
 
         RubyModule inputClass = runtime.defineModule("Input");
         inputClass.defineAnnotatedMethods(Input.class);
@@ -35,16 +44,6 @@ public class RGSSBuiltinService implements BasicLibraryService {
         Input.runtime = runtime;
         Input.rubyClass = inputClass;
 
-        RubyClass colorClass = runtime.defineClass("Color", runtime.getObject(), Color::new);
-        colorClass.defineAnnotatedMethods(Color.class);
-        Color.runtime = runtime;
-        Color.rubyClass = colorClass;
-
-        RubyClass fontClass = runtime.defineClass("Font", runtime.getObject(), Font::new);
-        fontClass.defineAnnotatedMethods(Font.class);
-        Font.runtime = runtime;
-        Font.rubyClass = fontClass;
-        Font.init();
 
         RubyClass win32Class = runtime.defineClass("Win32API", runtime.getObject(), Win32API::new);
         win32Class.defineAnnotatedMethods(Win32API.class);
@@ -68,6 +67,50 @@ public class RGSSBuiltinService implements BasicLibraryService {
             }
         }catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private <T extends RubyObject> void setupClass(final Class<T> clazz) {
+        try{
+            final Constructor<T> c = clazz.getDeclaredConstructor(Ruby.class, RubyClass.class);
+            final RubyClass rubyClass = runtime.defineClass(clazz.getSimpleName(), runtime.getObject(),
+                    (ruby, rClass)->{
+                        try {
+                            return c.newInstance(ruby, rClass);
+                        }catch(Exception e) {
+                            throw new RuntimeException("Could not instantiate "+clazz.getSimpleName()+"!",e);
+                        }
+                    });
+            rubyClass.defineAnnotatedMethods(clazz);
+            setOptionalField(clazz, "runtime", runtime);
+            setOptionalField(clazz, "rubyClass", rubyClass);
+            callOptionalMethod(clazz, "init");
+        }catch(Exception e) {
+            throw new RuntimeException("Failed to load "+clazz.getSimpleName(),e);
+        }
+    }
+
+    private void setOptionalField(Class<?> clazz, String fieldName, Object value) {
+        try{
+            Field f = clazz.getDeclaredField(fieldName);
+            f.setAccessible(true);
+            f.set(null, value);
+        }catch(NoSuchFieldException e) {
+
+        }catch (Exception e) {
+            throw new RuntimeException("Unknown exception setting "+fieldName+" in "+clazz.getSimpleName(),e);
+        }
+    }
+
+    private void callOptionalMethod(Class<?> clazz, String methodName) {
+        try{
+            Method m = clazz.getDeclaredMethod(methodName);
+            m.setAccessible(true);
+            m.invoke(null);
+        }catch(NoSuchMethodException e) {
+
+        }catch (Exception e) {
+            throw new RuntimeException("Unknown exception invoking "+methodName+" in "+clazz.getSimpleName(),e);
         }
     }
 

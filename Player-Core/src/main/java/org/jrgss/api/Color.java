@@ -106,14 +106,8 @@ public class Color extends RubyObject implements Serializable,Cloneable {
 
     @JRubyMethod( module = true)
     public static IRubyObject _load(ThreadContext context, IRubyObject self, IRubyObject rubyObj) {
-        RubyString rubyString = rubyObj.asString();
-        ByteBuffer colorLoader = ByteBuffer.wrap(rubyString.getBytes());
-        colorLoader.order(ByteOrder.LITTLE_ENDIAN);
         Color c = new Color();
-        c.red = (int)colorLoader.getDouble();
-        c.green = (int)colorLoader.getDouble();
-        c.blue = (int)colorLoader.getDouble();
-        c.alpha = (int)colorLoader.getDouble();
+        c.marshal_load(context, rubyObj);
         return c;
     }
 
@@ -121,6 +115,9 @@ public class Color extends RubyObject implements Serializable,Cloneable {
     public IRubyObject marshal_load(ThreadContext context, IRubyObject rubyObj) {
         RubyString rubyString = rubyObj.asString();
         ByteBuffer colorLoader = ByteBuffer.wrap(rubyString.getBytes());
+        if(colorLoader.capacity() != 32) {
+            throw new IllegalArgumentException("Trying to load a corrupt color! Color must be 32 bytes!");
+        }
         colorLoader.order(ByteOrder.LITTLE_ENDIAN);
         red = (int)colorLoader.getDouble();
         green = (int)colorLoader.getDouble();

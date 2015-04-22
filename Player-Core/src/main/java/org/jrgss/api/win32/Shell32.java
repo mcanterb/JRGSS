@@ -7,6 +7,8 @@ import org.jruby.RubyClass;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jrgss.JRubyUtil.*;
+
 import java.awt.*;
 import java.io.File;
 import java.net.URI;

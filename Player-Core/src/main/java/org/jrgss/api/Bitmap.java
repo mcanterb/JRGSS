@@ -19,8 +19,6 @@ import org.jrgss.JRGSSGame;
 import org.jrgss.shaders.TextShaderProgram;
 
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.Queue;
 
 import static org.jrgss.JRGSSGame.runWithGLContext;
 
@@ -570,7 +568,7 @@ public class Bitmap {
                 //Gdx.app.log("Bitmap", "Drawing text " + string + ". Colors " + font.getColor() + " " + f.getScaleX());
 
 
-                Color outColor = font.getOut_color();
+                Color outColor = font.getOutColor();
                 Color innerColor = font.getColor();
                 //f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
                 frameBuffer.begin();

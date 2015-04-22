@@ -64,9 +64,9 @@ def load_data(filename)
         obj = Marshal.load(f)
     rescue Exception => e
         puts e.backtrace
+        puts "Failed to load_data as object"
         obj = f
     end
-
     obj
 end
 
@@ -89,7 +89,16 @@ class << Marshal
     if proc
         jrgss_load(port, proc)
     else
-        jrgss_load(port)
+        puts "Getting ready to call load..."
+        begin
+            obj = jrgss_load(port)
+        rescue Exception => e
+            puts e.class.name
+            puts e.backtrace.join("\n")
+            raise e
+        end
+        puts "loaded type: "+obj.class.name
+        obj
     end
   end
 end unless Marshal.respond_to?(:jrgss_load)

@@ -6,6 +6,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.nio.ByteBuffer;
+import static org.jrgss.JRubyUtil.*;
 
 /**
  * Created by matt on 2/6/15.

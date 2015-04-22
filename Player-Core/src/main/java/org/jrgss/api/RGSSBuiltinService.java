@@ -24,12 +24,7 @@ public class RGSSBuiltinService implements BasicLibraryService {
     @Override
     public boolean basicLoad(Ruby runtime) throws IOException {
         this.runtime = runtime;
-        RubyClass tableClass = runtime.defineClass("Table", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new Table(runtime, klazz);
-            }
-        });
+        RubyClass tableClass = runtime.defineClass("Table", runtime.getObject(), Table::new);
         tableClass.defineAnnotatedMethods(Table.class);
         Table.runtime = runtime;
         Table.rubyClass = tableClass;
@@ -40,12 +35,18 @@ public class RGSSBuiltinService implements BasicLibraryService {
         Input.runtime = runtime;
         Input.rubyClass = inputClass;
 
-        RubyClass win32Class = runtime.defineClass("Win32API", runtime.getObject(), new ObjectAllocator() {
-            @Override
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new Win32API(runtime, klazz);
-            }
-        });
+        RubyClass colorClass = runtime.defineClass("Color", runtime.getObject(), Color::new);
+        colorClass.defineAnnotatedMethods(Color.class);
+        Color.runtime = runtime;
+        Color.rubyClass = colorClass;
+
+        RubyClass fontClass = runtime.defineClass("Font", runtime.getObject(), Font::new);
+        fontClass.defineAnnotatedMethods(Font.class);
+        Font.runtime = runtime;
+        Font.rubyClass = fontClass;
+        Font.init();
+
+        RubyClass win32Class = runtime.defineClass("Win32API", runtime.getObject(), Win32API::new);
         win32Class.defineAnnotatedMethods(Win32API.class);
         Win32API.runtime = runtime;
         Win32API.rubyClass = win32Class;
@@ -69,4 +70,5 @@ public class RGSSBuiltinService implements BasicLibraryService {
             throw new RuntimeException(e);
         }
     }
+
 }

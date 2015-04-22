@@ -14,6 +14,7 @@ import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,7 +29,7 @@ import java.util.concurrent.*;
 public class JRGSSGame implements JRGSSApplicationListener {
     ScriptingContainer scriptingContainer;
     final String[] BUILTINS = new String[] {
-            "Audio", "Bitmap", "Color", "Font", "Graphics",
+            "Audio", "Bitmap", "Graphics",
             "Plane", "Rect", "RGSSError", "Sprite",
             "Tilemap", "Tone", "Viewport", "Window",
             "RGSSReset"
@@ -256,6 +257,18 @@ public class JRGSSGame implements JRGSSApplicationListener {
         scriptingContainer.put("$_jrgss_paths", new String[]{FileUtil.localDirectory, FileUtil.gameDirectory});
         //loadScriptData(ini.getScripts());
         loadScriptsFromDirectory("/Users/matt/VidarScripts");
+        IRubyObject file = (IRubyObject)scriptingContainer.runScriptlet("File.open(\"/Users/matt/Library/Application Support/JRGSS/Vidar/Save04.rvdata2\")");
+        RubyMarshal.load(scriptingContainer.getProvider().getRuntime().getCurrentContext(),
+                null,
+                new IRubyObject[] {file},
+                null);
+        try {
+            RubyMarshal.load(scriptingContainer.getProvider().getRuntime().getCurrentContext(),
+                    null,
+                    new IRubyObject[]{file},
+                    null);
+        }catch(Exception e) {}
+        System.out.println(file.callMethod(scriptingContainer.getProvider().getRuntime().getCurrentContext(), "pos"));
         //Gdx.app.log("JRGSSGame", scriptingContainer.runScriptlet("load_data(\"Data/Map101.rvdata2\")").toString());
     }
 

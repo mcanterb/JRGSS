@@ -11,7 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
-import java.awt.*;
+import static org.jrgss.JRubyUtil.*;
 import java.io.File;
 import java.net.URI;
 import java.nio.ByteBuffer;

@@ -120,10 +120,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
             String str2 = (String)scriptingContainer.runScriptlet("Zlib::Inflate.inflate($__obj[2]).force_encoding(\"utf-8\")");
             try{
                 String script = str2.replaceAll("\r\n","\n");
-                try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
-                    writer.write("# encoding: UTF-8\n" + script);
-                }
-                System.out.println("Saving /Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb");
+                
                 scriptingContainer.setScriptFilename(name);
                 scriptingContainer.runScriptlet("# encoding: UTF-8\n" + script);
             }catch (Exception e) {

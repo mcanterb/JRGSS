@@ -1,8 +1,8 @@
 package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import lombok.AllArgsConstructor;
@@ -117,6 +117,8 @@ public class Tilemap {
             new int[]{3920, 3967},
             new int[]{4304, 4351},
     };
+    private static final Color SHADOW_COLOR = new Color(0,0,0,0.5f);
+
     final Map<Integer, TextureRegion>[] tiles = new Map[3];
     Viewport viewport;
     boolean disposed = false;
@@ -152,7 +154,7 @@ public class Tilemap {
         batch.setProjectionMatrix(camera.combined);
 
         for(int i = 0; i < 6; i++) {
-            layers[i] = new TileMapLayer(i);
+            layers[i] = i!=5?new TileMapLayer(i):new ShadowLayer();
         }
 
         Gdx.app.log("Tilemap", "New Tilemap has been created.");
@@ -187,6 +189,7 @@ public class Tilemap {
     private static boolean isTable(int data) {
         return inRange(TABLE_RANGES, data);
     }
+
 
     public void dispose() {
         batch.dispose();
@@ -324,7 +327,7 @@ public class Tilemap {
             //newRegion = new TextureRegion(tilemap, sx, (tilemapHeight - 32) - sy, 32, 32);
 
 
-            int[] autoTilePieces = isWall(id) ? WALL_PIECES[autoId] : AUTOTILE_PARTS[autoId];
+            int[] autoTilePieces = isWall(id) ? WATERFALL_PIECES[autoId] : AUTOTILE_PARTS[autoId];
 
             for (int i = 0; i < 4; i++) {
                 batch.draw(tilemap,x+(i % 2) * 16, y + (i / 2) * 16, (autoTilePieces[i] % 4) * 16 + sx, (tilemapHeight - 16) - ((autoTilePieces[i] / 4) * 16 + sy), 16, 16);
@@ -441,7 +444,7 @@ public class Tilemap {
         public int getZ() {
             switch (layer) {
                 case 0:
-                    return -2;
+                    return -3;
                 case 1:
                     return -1;
                 case 2:
@@ -451,7 +454,7 @@ public class Tilemap {
                 case 4:
                     return 201;
                 case 5:
-                    return 2;
+                    return -2;
                 default:
                     return 0;
             }
@@ -469,6 +472,42 @@ public class Tilemap {
 
         public String toString() {
             return "Tilemap(layer="+layer+", "+viewport.toString()+")";
+        }
+    }
+
+    @ToString(callSuper = true)
+    private class ShadowLayer extends TileMapLayer {
+
+        public ShadowLayer() {
+            super(5);
+        }
+
+        @Override
+        public void render(SpriteBatch _) {
+            batch.begin();
+            batch.setColor(SHADOW_COLOR);
+            for (int x = Math.min(ox/32, map_data.dim1); x < Math.min(map_data.dim1, (ox+32+viewport.getRect().getWidth())/32); x++) {
+                for (int y = Math.min(oy/32, map_data.dim2); y < Math.min(map_data.dim2, (oy+32+viewport.getRect().getHeight())/32); y++) {
+
+                    Short tile = map_data.get(x, y, 3);
+                    if(tile != 0) {
+                        if((tile&0b1) != 0) {
+                            batch.draw(Sprite.getColorTexture(), (x * 32) - ox, (y * 32) - oy, 16, 16);
+                        }
+                        if((tile&0b10) != 0) {
+                            batch.draw(Sprite.getColorTexture(), (x * 32) - ox + 16, (y * 32) - oy, 16, 16);
+                        }
+                        if((tile&0b100) != 0) {
+                            batch.draw(Sprite.getColorTexture(), (x * 32) - ox, (y * 32) - oy + 16, 16, 16);
+                        }
+                        if((tile&0b1000) != 0) {
+                            batch.draw(Sprite.getColorTexture(), (x * 32) - ox + 16, (y * 32) - oy + 16, 16, 16);
+                        }
+                    }
+                }
+            }
+            batch.end();
+            batch.setColor(1f,1f,1f,1f);
         }
     }
 

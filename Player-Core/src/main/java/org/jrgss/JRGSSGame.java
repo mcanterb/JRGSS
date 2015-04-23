@@ -255,20 +255,9 @@ public class JRGSSGame implements JRGSSApplicationListener {
         loadRPGModule();
         scriptingContainer.put("$_jrgss_home", FileUtil.gameDirectory);
         scriptingContainer.put("$_jrgss_paths", new String[]{FileUtil.localDirectory, FileUtil.gameDirectory});
-        //loadScriptData(ini.getScripts());
-        loadScriptsFromDirectory("/Users/matt/VidarScripts");
-        IRubyObject file = (IRubyObject)scriptingContainer.runScriptlet("File.open(\"/Users/matt/Library/Application Support/JRGSS/Vidar/Save04.rvdata2\")");
-        RubyMarshal.load(scriptingContainer.getProvider().getRuntime().getCurrentContext(),
-                null,
-                new IRubyObject[] {file},
-                null);
-        try {
-            RubyMarshal.load(scriptingContainer.getProvider().getRuntime().getCurrentContext(),
-                    null,
-                    new IRubyObject[]{file},
-                    null);
-        }catch(Exception e) {}
-        System.out.println(file.callMethod(scriptingContainer.getProvider().getRuntime().getCurrentContext(), "pos"));
+        loadScriptData(ini.getScripts());
+        //loadScriptsFromDirectory("/Users/matt/VidarScripts");
+
         //Gdx.app.log("JRGSSGame", scriptingContainer.runScriptlet("load_data(\"Data/Map101.rvdata2\")").toString());
     }
 

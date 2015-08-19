@@ -17,32 +17,32 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-backend-lwjgl</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-natives</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-backend-lwjgl-natives</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-freetype-natives</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-controllers-desktop</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-controllers-desktop-natives</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
     </dependencies>
 

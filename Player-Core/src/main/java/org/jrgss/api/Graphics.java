@@ -16,50 +16,45 @@ import org.jrgss.JRGSSApplication;
 import org.jrgss.JRGSSGame;
 import org.jrgss.shaders.TransitionShaderProgram;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.ext.fiber.ThreadFiber;
+import org.jruby.javasupport.JavaObject;
+import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.stream.Collectors;
 
 /**
  * Created by matty on 6/27/14.
  */
 public class Graphics {
-    public static final Comparator<AbstractRenderable> alternateComparator = new Comparator<AbstractRenderable>() {
-        @Override
-        public int compare(AbstractRenderable o1, AbstractRenderable o2) {
+    public static final Comparator<AbstractRenderable> alternateComparator = (o1, o2) -> {
 
-            int ret;
-            if(o1.getViewport() != null && o2.getViewport() != null) {
-                ret = Integer.compare(o1.getViewport().getZ(), o2.getViewport().getZ());
-                if(ret != 0) return ret;
-            } else
-            if(o2.getViewport() != null) {
-                ret = Integer.compare(o1.getZ(), o2.getViewport().getZ());
-                if (ret != 0) return ret;
-            } else
-            if(o1.getViewport() != null) {
-                ret = Integer.compare(o1.getViewport().getZ(), o2.getZ());
-                if (ret != 0) return ret;
-            } else {
-                ret = Integer.compare(o1.getZ(), o2.getZ());
-                if (ret != 0) return ret;
-            }
-            if(o1 instanceof Viewport && o1 == o2.getViewport()) {
-                return 1;
-            }
-            if(o2 instanceof Viewport && o2 == o1.getViewport()) {
-                return -1;
-            }
-            ret = Integer.compare(o1.getY(), o2.getY());
-            if (ret != 0) return ret;
-            ret = Long.compare(o1.getCreationTime(), o2.getCreationTime());
-            return ret;
+        int ret;
+        if(o1 instanceof Viewport && o1 == o2.getViewport()) {
+            return 1;
         }
+        if(o2 instanceof Viewport && o2 == o1.getViewport()) {
+            return -1;
+        }
+
+        int o2VPZ = o2.getViewport()==null?0:o2.getViewport().getZ();
+        int o1VPZ = o1.getViewport()==null?0:o1.getViewport().getZ();
+
+        ret = Integer.compare(o1VPZ, o2VPZ);
+        if (ret != 0) return ret;
+
+        ret = Integer.compare(o1.getY(), o2.getY());
+        if (ret != 0) return ret;
+        ret = Long.compare(o1.getCreationTime(), o2.getCreationTime());
+        return ret;
     };
+
     @Getter
     public static int frame_count = 0;
     @Getter
@@ -124,6 +119,10 @@ public class Graphics {
             Graphics.fullscreen = fullscreen;
             resize_screen(desiredWidth, desiredHeight);
         }
+    }
+
+    public static boolean isFullscreen() {
+        return fullscreen;
     }
 
     public static void init() {
@@ -218,18 +217,23 @@ public class Graphics {
         Gdx.gl.glClearColor(0, 0, 0, 0f);
         gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_STENCIL_BUFFER_BIT);
         ArrayList<AbstractRenderable> renderables = new ArrayList<>();
-        ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
+        /*ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
         for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
             if (renderable.getViewport() == null) {
                 viewportLessRenderables.add(renderable);
             } else {
                 renderables.add(renderable);
             }
-        }
-        Collections.sort(renderables);
-        Collections.sort(viewportLessRenderables, alternateComparator);
+        }*/
+        AbstractRenderable.cleanup();
+        renderables.addAll(AbstractRenderable.renderQueue.values().stream().filter(renderableWeakReference -> renderableWeakReference.get() != null).map(WeakReference::get).collect(Collectors.toList()));
 
-        Iterator<AbstractRenderable> iter;
+        Collections.sort(renderables);
+        for(AbstractRenderable renderable : renderables) {
+            renderable.render(batch);
+        }
+
+        /*Iterator<AbstractRenderable> iter;
         for (AbstractRenderable renderable : renderables) {
             iter = viewportLessRenderables.iterator();
             AbstractRenderable r;
@@ -241,7 +245,7 @@ public class Graphics {
         }
         for (AbstractRenderable renderable : viewportLessRenderables) {
             renderable.render(batch);
-        }
+        }*/
     }
 
     private static long lastFrame = 0;
@@ -251,6 +255,7 @@ public class Graphics {
     public static void render(SpriteBatch batch) {
 
         tempBuffer = checkBufferSize(tempBuffer);
+        tempBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         GL20 gl = Gdx.gl;
         Gdx.gl.glClearColor(0, 0, 0, 0f);
         gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_STENCIL_BUFFER_BIT);
@@ -329,6 +334,7 @@ public class Graphics {
             }
 
             if (brightness != 255) {
+                Gdx.app.log("Graphics", "Brightness is "+brightness);
                 finalBatch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
                 finalBatch.draw(Sprite.getColorTexture(), x, y,
                         width, height);
@@ -370,6 +376,7 @@ public class Graphics {
         batch.setProjectionMatrix(JRGSSGame.camera.combined);
         batch.setColor(1f, 1f, 1f, 1f);
         backBuffer = checkBufferSize(backBuffer);
+        backBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         backBuffer.begin();
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f);
         renderToBoundFramebuffer(batch);
@@ -389,10 +396,12 @@ public class Graphics {
         }
         brightness = 255;
         float fadeStep = (1f / duration);
+        System.gc();
         for (int i = duration; i >= 0; i--) {
             backBufferOpacity = (i * fadeStep);
             update();
         }
+        System.gc();
         if (backBuffer != null) backBuffer.dispose();
         backBuffer = null;
     }
@@ -437,6 +446,7 @@ public class Graphics {
             brightness = (int) (i * fadeStep);
             update();
         }
+        System.gc();
     }
 
     public static void fadein(int duration) {
@@ -447,6 +457,7 @@ public class Graphics {
             brightness = (int) (i * fadeStep);
             update();
         }
+        System.gc();
     }
 
     public static Bitmap snap_to_bitmap() {

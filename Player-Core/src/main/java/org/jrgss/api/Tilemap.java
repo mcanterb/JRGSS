@@ -117,7 +117,7 @@ public class Tilemap {
             new int[]{3920, 3967},
             new int[]{4304, 4351},
     };
-    private static final Color SHADOW_COLOR = new Color(0,0,0,0.5f);
+    private static final Color SHADOW_COLOR = new Color(0,0,0,0.25f);
 
     final Map<Integer, TextureRegion>[] tiles = new Map[3];
     Viewport viewport;

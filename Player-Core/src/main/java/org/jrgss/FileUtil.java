@@ -97,9 +97,11 @@ public class FileUtil {
     }
 
     public static RubyString rawLoadFile(String path) {
-        path = path.replaceAll("\\\\", File.separator);
+        if(!File.separator.equals("\\")) {
+            path = path.replaceAll("\\\\", File.separator);
+        }
         if(path.startsWith(File.separator)) {
-            File f = new File(path);
+            File f = new File(caseInsensitiveLookup(path));
             if(f.exists()) {
                 //Gdx.app.log("FileUtil","Found "+path+" in Game folder.");
                 return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(f).readBytes());
@@ -107,7 +109,7 @@ public class FileUtil {
             return null;
         }
 
-        File file = new File(caseInsensitiveLookup(localDirectory + File.separator +path.replaceAll("\\\\", File.separator)));
+        File file = new File(caseInsensitiveLookup(localDirectory + File.separator +path));
         if(file.exists()) {
             return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(file).readBytes());
         }
@@ -116,7 +118,7 @@ public class FileUtil {
             FileHandle f = archive.openFile(convertedPath);
             if( f != null) return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), f.readBytes());
         }
-        file = new File(caseInsensitiveLookup(gameDirectory + File.separator +path.replaceAll("\\\\", File.separator)));
+        file = new File(caseInsensitiveLookup(gameDirectory + File.separator +path));
         if(file.exists()) {
             //Gdx.app.log("FileUtil","Found "+path+" in Game folder.");
             return new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), new FileHandle(file).readBytes());

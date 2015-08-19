@@ -32,7 +32,7 @@ class << File
 
     alias_method(:jrgss_open, :open)
     def open(path, *args, &block)
-        if path.start_with?("/")
+        if path.start_with?(Java::JavaIo::File.separator) || path.match('\A[A-Za-z]:')
             puts "Doing absolute file "+path
             return jrgss_open(path, *args, &block)
         end
@@ -57,21 +57,19 @@ end
 
 
 def load_data(filename)
-    filename = filename.gsub("\\", "/")
+    filename = filename.gsub("\\", Java::JavaIo::File::separator).gsub("/", Java::JavaIo::File::separator)
     puts 'Loading Data for '+filename
     f = Java::OrgJrgss::FileUtil::rawLoadFile(filename)
     begin
         obj = Marshal.load(f)
     rescue Exception => e
-        puts e.backtrace
-        puts "Failed to load_data as object"
-        obj = f
+	   obj = f
     end
     obj
 end
 
 def save_data(obj, filename)
-    filename = filename.gsub("\\", "/")
+    filename = filename.gsub("\\", Java::JavaIo::File::separator)
     filename = File.join($_jrgss_paths[0],filename)
     puts 'Saving Data for '+filename
     FileUtils.mkdir_p(File.dirname(filename))
@@ -93,8 +91,6 @@ class << Marshal
         begin
             obj = jrgss_load(port)
         rescue Exception => e
-            puts e.class.name
-            puts e.backtrace.join("\n")
             raise e
         end
         puts "loaded type: "+obj.class.name

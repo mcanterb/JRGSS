@@ -5,6 +5,10 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import lombok.Getter;
 import lombok.ToString;
 
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -16,12 +20,24 @@ import java.util.Map;
 public abstract class AbstractRenderable implements Comparable<AbstractRenderable>, Renderable {
 
 
-    public static final Map<AbstractRenderable, AbstractRenderable> renderQueue = new IdentityHashMap<>();
+    public static final Map<Long, WeakReference<AbstractRenderable>> renderQueue = new HashMap<>();
     private static long counter = 0;
     @Getter
     protected long creationTime;
     @Getter
     protected boolean disposed = false;
+
+    private static final ReferenceQueue<AbstractRenderable> referenceQueue = new ReferenceQueue<>();
+
+    private static class RenderableReference extends WeakReference<AbstractRenderable> {
+
+        private final long id;
+
+        public RenderableReference(AbstractRenderable referent, ReferenceQueue<? super AbstractRenderable> q) {
+            super(referent, q);
+            id = referent.getCreationTime();
+        }
+    }
 
     public AbstractRenderable() {
         synchronized (AbstractRenderable.class) {
@@ -31,15 +47,31 @@ public abstract class AbstractRenderable implements Comparable<AbstractRenderabl
         }
     }
 
+    public static synchronized void cleanup() {
+        RenderableReference reference;
+        while((reference = (RenderableReference)referenceQueue.poll()) != null) {
+            AbstractRenderable renderable = reference.get();
+            if(renderable != null) {
+                renderable.dispose();
+                Gdx.app.log("AbstractRenderable", "Disposing of " + reference.id+". Was able to clean up!");
+            }
+            else if(renderQueue.containsKey(reference.id)) {
+                Gdx.app.log("AbstractRenderable", "Disposing of " + reference.id);
+                renderQueue.remove(reference.id);
+            }
+        }
+    }
+
     protected synchronized void addToRenderQueue() {
         if(this instanceof Window) {
             Gdx.app.log("AbstractRenderable","Adding Window to queue: "+toString());
         }
-        renderQueue.put(this, this);
+        WeakReference<AbstractRenderable> renderableWeakReference = new RenderableReference(this, referenceQueue);
+        renderQueue.put(creationTime, renderableWeakReference);
     }
 
     public synchronized void dispose() {
-        renderQueue.remove(this);
+        renderQueue.remove(creationTime);
         this.disposed = true;
     }
 
@@ -47,18 +79,28 @@ public abstract class AbstractRenderable implements Comparable<AbstractRenderabl
 
     @Override
     public int compareTo(AbstractRenderable other) {
-        Viewport otherVP = other.getViewport();
-        Viewport vp = getViewport();
+        AbstractRenderable o1 = this;
+        AbstractRenderable o2 = other;
+        if(other == this) return 0;
+        if(o1 instanceof Viewport && o1 == o2.getViewport()) {
+            return 1;
+        }
+        if(o2 instanceof Viewport && o2 == o1.getViewport()) {
+            return -1;
+        }
+
+        if(o1.getViewport() != o2.getViewport()) {
+            o1 = o1.getViewport() == null ? o1 : o1.getViewport();
+            o2 = o2.getViewport() == null ? o2 : o2.getViewport();
+        }
 
 
-        int ret = Integer.compare(vp.getZ(), otherVP.getZ());
-        if(ret != 0) return ret;
 
-        ret = Integer.compare(getZ(), other.getZ());
+        int ret = Integer.compare(o1.getZ(), o2.getZ());
         if(ret != 0) return ret;
-        ret = Integer.compare(getY(), other.getY());
+        ret = Integer.compare(o1.getY(), o2.getY());
         if(ret != 0) return ret;
-        ret = Long.compare(getCreationTime(), other.getCreationTime());
+        ret = Long.compare(o1.getCreationTime(), other.getCreationTime());
         return ret;
     }
 

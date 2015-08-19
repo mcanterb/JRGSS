@@ -126,6 +126,7 @@ public class Sprite extends AbstractRenderable {
 
     public void dispose() {
         super.dispose();
+        Gdx.app.log("Sprint", "Dispose called");
     }
 
     public void setX(int x) {
@@ -146,6 +147,9 @@ public class Sprite extends AbstractRenderable {
 
     @Override
     public void render(SpriteBatch _) {
+        if(isDisposed()) {
+            Gdx.app.log("Sprite","Disposed, but still drawing! ");
+        }
         if (bitmap != null && visible && opacity > 0 && (viewport == null || (viewport.isVisible() && !viewport.isDisposed()))) {
             //Gdx.app.log("Sprite", String.format("Rendering: %s, %d, %d, %d, %d", viewport, x, y, ox, oy));
             if(batch == null) {

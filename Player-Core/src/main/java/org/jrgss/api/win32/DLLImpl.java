@@ -12,6 +12,6 @@ import java.nio.ByteOrder;
 /**
  * Created by matt on 2/7/15.
  */
-public abstract class DLLImpl implements JRubyUtil {
-    public abstract IRubyObject call(Win32API api, ThreadContext context, IRubyObject[] args);
+public interface DLLImpl {
+    public IRubyObject call(Win32API api, ThreadContext context, IRubyObject[] args);
 }

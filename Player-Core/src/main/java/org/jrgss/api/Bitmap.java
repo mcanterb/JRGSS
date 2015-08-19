@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -41,6 +42,7 @@ public class Bitmap {
 
     public Bitmap(Pixmap img) {
         frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, img.getWidth(), img.getHeight(), false);
+        frameBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         OrthographicCamera camera = new OrthographicCamera();
         camera.setToOrtho(false, img.getWidth(), img.getHeight());
         img.getPixels().rewind();
@@ -99,21 +101,18 @@ public class Bitmap {
         this.height = height;
         this.camera = new OrthographicCamera(width, height);
         this.camera.setToOrtho(true, width, height);
-        runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                if (width == 0 || height == 0) {
-                    frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1, 1, false);
-                } else {
-                    frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
-                }
-                frameBuffer.begin();
-                Gdx.gl.glClearColor(1, 1, 1, 0f);
-                Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-                frameBuffer.end();
-                region = new TextureRegion(frameBuffer.getColorBufferTexture());
-                batch = new SpriteBatch();
+        runWithGLContext(() -> {
+            if (width == 0 || height == 0) {
+                frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, 1, 1, false);
+            } else {
+                frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, width, height, false);
             }
+            frameBuffer.begin();
+            Gdx.gl.glClearColor(1, 1, 1, 0f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            frameBuffer.end();
+            region = new TextureRegion(frameBuffer.getColorBufferTexture());
+            batch = new SpriteBatch();
         });
         clear();
     }
@@ -203,7 +202,6 @@ public class Bitmap {
                 batch.end();
                 frameBuffer.end();
                 region = new TextureRegion(frameBuffer.getColorBufferTexture());
-                batch.dispose();
                 pixmap = null;
             }
         });
@@ -285,8 +283,12 @@ public class Bitmap {
     }
 
     public Rect text_size(final String str) {
-        BitmapFont.TextBounds bounds = font.bitmapFont.getBounds(str);
-        return new Rect(0, 0, (int) bounds.width, (int) (font.bitmapFont.getCapHeight()));
+        if(font.bitmapFont == null) {
+            Gdx.app.log("Bitmap","Bitmap font is null.");
+        }
+        float multiplier = str.length() == 1?0.9f:0.95f;
+        GlyphLayout layout = new GlyphLayout(font.outlineFont, str);
+        return new Rect(0, 0, (int)((" ".equals(str)?font.outlineFont.getSpaceWidth():(layout.width))*multiplier), (int)(layout.height));
     }
 
     public Rect rect() {
@@ -319,21 +321,16 @@ public class Bitmap {
     private void internalBlit(final int x, final int y, final int width, final int height,
                               final Bitmap src_bitmap, final Rect src_rect, final int opacity) {
 
-        JRGSSGame.runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                SpriteBatch batch = new SpriteBatch();
-                batch.enableBlending();
-                batch.setProjectionMatrix(camera.combined);
-                frameBuffer.begin();
-                batch.setColor(1.0f, 1.0f, 1.0f, (opacity / 255f));
-                batch.begin();
-                src_bitmap.render(batch, x, y, width, height, src_rect);
-                batch.end();
-                frameBuffer.end();
-                batch.dispose();
-                pixmap = null;
-            }
+        JRGSSGame.runWithGLContext(() -> {
+            batch.enableBlending();
+            batch.setProjectionMatrix(camera.combined);
+            frameBuffer.begin();
+            batch.setColor(1.0f, 1.0f, 1.0f, (opacity / 255f));
+            batch.begin();
+            src_bitmap.render(batch, x, y, width, height, src_rect);
+            batch.end();
+            frameBuffer.end();
+            pixmap = null;
         });
 
     }
@@ -347,9 +344,9 @@ public class Bitmap {
     }
 
     public void dispose() {
-        isDisposed = true;
         if(isDisposed) return;
-        Gdx.app.log("Bitmap","Calling dispose for "+path);
+        isDisposed = true;
+        //Gdx.app.log("Bitmap","Calling dispose for "+path);
         if (frameBuffer != null) {
             runWithGLContext(new Runnable() {
                 FrameBuffer fb = frameBuffer;
@@ -361,36 +358,36 @@ public class Bitmap {
             });
             frameBuffer = null;
         }
-        if(pixmap != null) pixmap.dispose();
-        if(region != null) region.getTexture().dispose();
-        if(batch != null) batch.dispose();
+        runWithGLContext(() ->{
+
+            if (pixmap != null) pixmap.dispose();
+            if (region != null) region.getTexture().dispose();
+            if (batch != null) batch.dispose();
+        });
     }
 
     public void blur() {
-        JRGSSGame.runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                Pixmap p = getPixmap();
-                IntBuffer inPixels = p.getPixels().asIntBuffer();
-                Gdx.app.log("Graphics", "Length of IntBuffer = " + inPixels.remaining());
-                IntBuffer outPixels = IntBuffer.allocate(inPixels.remaining());
-                blur(inPixels, outPixels, getWidth(), getHeight(), 2);
-                blur(outPixels, inPixels, getHeight(), getWidth(), 2);
-                OrthographicCamera camera = new OrthographicCamera();
-                camera.setToOrtho(false, getWidth(), getHeight());
-                SpriteBatch batch = new SpriteBatch();
-                batch.setProjectionMatrix(camera.combined);
-                frameBuffer.begin();
-                batch.begin();
-                Gdx.gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-                Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-                batch.draw(new Texture(p), 0, 0);
-                batch.end();
-                frameBuffer.end();
-                region = new TextureRegion(frameBuffer.getColorBufferTexture());
-                batch.dispose();
-                pixmap = null;
-            }
+        JRGSSGame.runWithGLContext(() -> {
+            Pixmap p = getPixmap();
+            IntBuffer inPixels = p.getPixels().asIntBuffer();
+            Gdx.app.log("Graphics", "Length of IntBuffer = " + inPixels.remaining());
+            IntBuffer outPixels = IntBuffer.allocate(inPixels.remaining());
+            blur(inPixels, outPixels, getWidth(), getHeight(), 2);
+            blur(outPixels, inPixels, getHeight(), getWidth(), 2);
+            OrthographicCamera camera1 = new OrthographicCamera();
+            camera1.setToOrtho(false, getWidth(), getHeight());
+            SpriteBatch batch1 = new SpriteBatch();
+            batch1.setProjectionMatrix(camera1.combined);
+            frameBuffer.begin();
+            batch1.begin();
+            Gdx.gl.glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+            Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+            batch1.draw(new Texture(p), 0, 0);
+            batch1.end();
+            frameBuffer.end();
+            region = new TextureRegion(frameBuffer.getColorBufferTexture());
+            batch1.dispose();
+            pixmap = null;
         });
 
     }
@@ -409,23 +406,20 @@ public class Bitmap {
 
 
     public void gradient_fill_rect(final int x, final int y, final int width, final int height, final Color color1, final Color color2, final boolean vertical) {
-        runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                ShapeRenderer shapeRenderer = new ShapeRenderer();
-                shapeRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-                shapeRenderer.setProjectionMatrix(camera.combined);
-                frameBuffer.begin();
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                if (vertical) {
-                    shapeRenderer.rect(x, y, width, height, color1.toGDX(), color1.toGDX(), color2.toGDX(), color2.toGDX());
-                } else {
-                    shapeRenderer.rect(x, y, width, height, color1.toGDX(), color2.toGDX(), color2.toGDX(), color1.toGDX());
-                }
-                shapeRenderer.end();
-                frameBuffer.end();
-                pixmap = null;
+        runWithGLContext(() -> {
+            ShapeRenderer shapeRenderer = new ShapeRenderer();
+            shapeRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+            shapeRenderer.setProjectionMatrix(camera.combined);
+            frameBuffer.begin();
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            if (vertical) {
+                shapeRenderer.rect(x, y, width, height, color1.toGDX(), color1.toGDX(), color2.toGDX(), color2.toGDX());
+            } else {
+                shapeRenderer.rect(x, y, width, height, color1.toGDX(), color2.toGDX(), color2.toGDX(), color1.toGDX());
             }
+            shapeRenderer.end();
+            frameBuffer.end();
+            pixmap = null;
         });
 
     }
@@ -435,22 +429,17 @@ public class Bitmap {
     }
 
     public void fill_rect(final int x, final int y, final int width, final int height, final Color color) {
-        runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                SpriteBatch batch = new SpriteBatch();
-                batch.disableBlending();
-                batch.setProjectionMatrix(camera.combined);
-                frameBuffer.begin();
-                batch.begin();
-                batch.setColor(color.toGDX());
-                //(height - srcRect.getHeight()) - srcRect.getY()
-                batch.draw(Sprite.getColorTexture(), x, y, width, height);
-                batch.end();
-                frameBuffer.end();
-                pixmap = null;
-                batch.dispose();
-            }
+        runWithGLContext(() -> {
+            batch.disableBlending();
+            batch.setProjectionMatrix(camera.combined);
+            frameBuffer.begin();
+            batch.begin();
+            batch.setColor(color.toGDX());
+            batch.draw(Sprite.getColorTexture(), x, y, width, height);
+            batch.end();
+            batch.enableBlending();
+            frameBuffer.end();
+            pixmap = null;
         });
     }
 
@@ -468,20 +457,17 @@ public class Bitmap {
     }
 
     public void clear_rect(final int x, final int y, final int width, final int height) {
-        runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                SpriteBatch batch = new SpriteBatch();
-                batch.disableBlending();
-                batch.setProjectionMatrix(camera.combined);
-                frameBuffer.begin();
-                batch.begin();
-                batch.setColor(0f, 0f, 0f, 0f);
-                batch.draw(Sprite.getColorTexture(), x, y, width, height);
-                batch.end();
-                frameBuffer.end();
-                pixmap = null;
-            }
+        runWithGLContext(() -> {
+            batch.disableBlending();
+            batch.setProjectionMatrix(camera.combined);
+            frameBuffer.begin();
+            batch.begin();
+            batch.setColor(0f, 0f, 0f, 0f);
+            batch.draw(Sprite.getColorTexture(), x, y, width, height);
+            batch.end();
+            batch.enableBlending();
+            frameBuffer.end();
+            pixmap = null;
         });
     }
 
@@ -525,19 +511,13 @@ public class Bitmap {
 
     public void set_pixel(final int x, final int y, Color c) {
         final Pixmap temp = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                final Texture texture = new Texture(temp);
-                SpriteBatch batch = new SpriteBatch();
-                //batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA_ALPHA);
-                //batch.enableBlending();
-                frameBuffer.begin();
-                batch.begin();
-                batch.draw(texture, x, y);
-                batch.end();
-                frameBuffer.end();
-            }
+        runWithGLContext(() -> {
+            final Texture texture = new Texture(temp);
+            frameBuffer.begin();
+            batch.begin();
+            batch.draw(texture, x, y);
+            batch.end();
+            frameBuffer.end();
         });
         pixmap = null;
     }
@@ -547,58 +527,81 @@ public class Bitmap {
     public void draw_text(final int x, final int y, final int width, final int height, final Object obj,
                           final int align) {
         final String string = obj.toString();
-        JRGSSGame.runWithGLContext(new Runnable() {
-            @Override
-            public void run() {
-                BitmapFont f = font.getBitmapFont();
-                BitmapFont.TextBounds bounds = f.getBounds(string);
-                if (bounds.width > width) {
-                    float xScale = Math.max(0.6f, width / bounds.width);
-                    batch.setProjectionMatrix(camera.combined.cpy().scale(xScale, 1.0f, 1.0f));
-                } else {
-                    batch.setProjectionMatrix(camera.combined);
-                }
-                int drawX = x;
-                if (align == 2) {
-                    drawX += width - bounds.width;
-                } else if (align == 1) {
-                    drawX += (width - bounds.width) / 2;
-                }
-                int drawY = y + (int) (height - bounds.height) / 2;
-                //Gdx.app.log("Bitmap", "Drawing text " + string + ". Colors " + font.getColor() + " " + f.getScaleX());
+        if(obj.toString().length() > 10) {
+            Gdx.app.log("Bitmap", String.format("%d, %d, %d, %d, %d, %s", x, y, width, height, align, obj));
+        }
+        JRGSSGame.runWithGLContext(() -> {
+            BitmapFont f = font.getBitmapFont();
+            BitmapFont outline = font.getOutlineFont();
 
+            if(string.length() == 1) {
+                Gdx.app.log("Bitmap", "Font size is "+font.getSize());
+            }
 
-                Color outColor = font.getOutColor();
-                Color innerColor = font.getColor();
-                //f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
-                frameBuffer.begin();
-                batch.begin();
-
-                f.setColor(outColor.red / 255f, outColor.green / 255f, outColor.blue / 255f, outColor.alpha / 255f);
-                f.draw(batch, string, drawX - 1.3f, drawY);
-                f.draw(batch, string, drawX + 1.3f, drawY);
-                f.draw(batch, string, drawX, drawY + 1.3f);
-                f.draw(batch, string, drawX, drawY - 1.3f);
-                f.draw(batch, string, drawX + 1.3f, drawY + 1.3f);
-                f.draw(batch, string, drawX - 1.3f, drawY - 1.3f);
-                f.draw(batch, string, drawX + 1.3f, drawY - 1.3f);
-                f.draw(batch, string, drawX - 1.3f, drawY + 1.3f);
-                batch.flush();
-                batch.setShader(TextShaderProgram.get());
-                //batch.setBlendFunction(GL20.GL_ONE, GL20.GL_ZERO);*/
-
-                f.setColor(innerColor.red / 255f, innerColor.green / 255f, innerColor.blue / 255f, innerColor.alpha / 255f);
-                f.draw(batch, string, drawX, drawY);
-
-
-                batch.end();
-                frameBuffer.end();
+            Color innerColor = font.getColor();
+            Color outerColor = font.getOutColor();
+            f.setColor(innerColor.toGDX());
+            outline.setColor(outerColor.toGDX());
+            GlyphLayout layout = new GlyphLayout(f, string);
+            GlyphLayout outlineLayout = new GlyphLayout(outline, string);
+            if (layout.width > width) {
+                float xScale = Math.max(0.6f, width / layout.width);
+                batch.setProjectionMatrix(camera.combined.cpy().scale(xScale, 1.0f, 1.0f));
+            } else {
                 batch.setProjectionMatrix(camera.combined);
-                if (path == null) {
-                    path = string;
-                } else {
-                    path += string;
+            }
+            float drawX = x;
+            if (align == 2) {
+                drawX += width - layout.width;
+            } else if (align == 1) {
+                if(string.length() > 10) {
+                    Gdx.app.log("Bitmap", "Width is "+layout.width);
                 }
+                drawX += (width - (layout.width)) / 2;
+            }
+            int drawY = y + (int) (height - outlineLayout.height) / 2;
+            drawY--;
+
+            frameBuffer.begin();
+            batch.setColor(com.badlogic.gdx.graphics.Color.WHITE);
+            batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            batch.begin();
+
+            float fontDrawX = drawX;
+
+            for(char c : string.toCharArray()) {
+                if(c == ' ') {
+                    fontDrawX += f.getSpaceWidth();
+                    continue;
+                }
+                String current = Character.toString(c);
+                layout = new GlyphLayout(f, current);
+                outlineLayout = new GlyphLayout(outline, current);
+                outline.draw(batch, outlineLayout, fontDrawX - ((outlineLayout.width - layout.width) / 2), drawY);
+                fontDrawX+=(outlineLayout.width * 0.885);
+            }
+            fontDrawX = drawX;
+            for(char c : string.toCharArray()) {
+                if(c == ' ') {
+                    fontDrawX += f.getSpaceWidth();
+                    continue;
+                }
+                String current = Character.toString(c);
+                layout = new GlyphLayout(f, current);
+                outlineLayout = new GlyphLayout(outline, current);
+
+                f.draw(batch, layout, fontDrawX, drawY);
+                fontDrawX+=(outlineLayout.width * 0.885);
+            }
+
+            batch.end();
+
+            frameBuffer.end();
+            batch.setProjectionMatrix(camera.combined);
+            if (path == null) {
+                path = string;
+            } else {
+                path += string;
             }
         });
         pixmap = null;
@@ -615,6 +618,13 @@ public class Bitmap {
 
     public void draw_text(Rect rect, Object str) {
         draw_text(rect.x, rect.y, rect.width, rect.height, str, 0);
+    }
+
+
+    public void setFont(Font font) {
+        if(font.getBitmapFont() == null) {
+            Gdx.app.log("Bitmap", "Font is null!");
+        }
     }
 
 }

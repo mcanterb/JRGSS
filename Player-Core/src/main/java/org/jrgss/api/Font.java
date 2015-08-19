@@ -1,6 +1,7 @@
 package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import static org.jrgss.JRubyUtil.*;
@@ -34,7 +35,7 @@ public class Font extends RubyObject{
     private static final int[] DEFAULT_OUT_COLOR = new int[] {0,0,0,128};
 
 
-    final static Map<FontCacheKey, BitmapFont> fontCache = new HashMap<>();
+    final static Map<FontCacheKey, BitmapFont[]> fontCache = new HashMap<>();
     static Ruby runtime;
     static RubyClass rubyClass;
 
@@ -50,6 +51,8 @@ public class Font extends RubyObject{
 
     @Getter
     BitmapFont bitmapFont;
+    @Getter
+    BitmapFont outlineFont;
     @Getter
     int size;
     @Getter
@@ -117,8 +120,8 @@ public class Font extends RubyObject{
         this.italic = defaultItalic;
         this.outline = defaultOutline;
         this.shadow = defaultShadow;
-        this.color = defaultColor;
-        this.outColor = defaultOutColor;
+        this.color = defaultColor.clone();
+        this.outColor = defaultOutColor.clone();
         update();
     }
 
@@ -176,7 +179,12 @@ public class Font extends RubyObject{
 
     @JRubyMethod(name="size=", required = 1)
     public IRubyObject sizeSet(IRubyObject arg) {
-        return rubyNum(this.size = getInt(arg));
+        int argSize = getInt(arg);
+        if(this.size != argSize) {
+            this.size = argSize;
+            update();
+        }
+        return rubyNum(this.size);
     }
 
     @JRubyMethod(name="bold=", required = 1)
@@ -213,6 +221,7 @@ public class Font extends RubyObject{
 
     @JRubyMethod(name="color=", required = 1)
     public IRubyObject colorSet(IRubyObject arg) {
+        Gdx.app.log("Font", "Set color to "+arg);
         return this.color = (Color)arg;
     }
 
@@ -225,18 +234,36 @@ public class Font extends RubyObject{
 
     private void update() {
         final String fontPath = FileUtil.rtpDirectory+File.separator+"Fonts"+File.separator+"VL-Gothic-Regular.ttf";
-        if(fontCache.containsKey(new FontCacheKey(size, fontPath))) {
-            bitmapFont = fontCache.get(new FontCacheKey(size, fontPath));
+        if(fontCache.containsKey(new FontCacheKey(size, fontPath, bold))) {
+            BitmapFont[] cached = fontCache.get(new FontCacheKey(size, fontPath, bold));
+            bitmapFont = cached[0];
+            outlineFont = cached[1];
         } else {
             Gdx.app.log("Font", "Generating new font");
             JRGSSGame.runWithGLContext(() -> {
                 FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.absolute(fontPath));
+
                 FreeTypeFontGenerator.FreeTypeFontParameter param = new FreeTypeFontGenerator.FreeTypeFontParameter();
-                param.size = (int) (size*.80);
+                param.size = (int)(size*(0.833));
+
+
+                Gdx.app.log("Font", String.format("%d versus %d", param.size, size));
+
                 param.flip = true;
-                param.genMipMaps = false;
+                param.genMipMaps = true;
+                param.borderColor = com.badlogic.gdx.graphics.Color.WHITE;
+                param.borderWidth = 0.2f + (bold?0.5f:0);
+
+                param.magFilter = Texture.TextureFilter.MipMapNearestLinear;
+                param.minFilter = Texture.TextureFilter.MipMapNearestLinear;
                 bitmapFont = generator.generateFont(param);
-                fontCache.put(new FontCacheKey(size, fontPath), bitmapFont);
+
+                param.magFilter = Texture.TextureFilter.MipMapNearestLinear;
+                param.minFilter = Texture.TextureFilter.MipMapNearestLinear;
+                param.borderWidth = 1.2f+ (bold?0.5f:0);
+                outlineFont = generator.generateFont(param);
+
+                fontCache.put(new FontCacheKey(size, fontPath, bold), new BitmapFont[]{bitmapFont, outlineFont});
                 generator.dispose();
 
             });
@@ -330,6 +357,7 @@ public class Font extends RubyObject{
     private static class FontCacheKey {
         final int size;
         final String name;
+        final boolean bold;
     }
 
 }

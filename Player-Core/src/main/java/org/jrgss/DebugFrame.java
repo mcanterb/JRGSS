@@ -44,13 +44,13 @@ public class DebugFrame extends JFrame {
         ArrayList<AbstractRenderable> renderables = new ArrayList<>();
         ArrayList<AbstractRenderable> viewportLessRenderables = new ArrayList<>();
         Gdx.app.log("Debug",AbstractRenderable.renderQueue.size() + " items in queue");
-        for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
+        /*for (AbstractRenderable renderable : AbstractRenderable.renderQueue.values()) {
             if (renderable.getViewport() == null) {
                 viewportLessRenderables.add(renderable);
             } else {
                 renderables.add(renderable);
             }
-        }
+        }*/
         Collections.sort(renderables);
         Collections.sort(viewportLessRenderables, Graphics.alternateComparator);
         Iterator<AbstractRenderable> iter;

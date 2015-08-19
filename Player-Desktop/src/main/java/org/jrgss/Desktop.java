@@ -29,8 +29,8 @@ public class Desktop {
             cfg.resizable = false;
             cfg.useHDPI = true;
             cfg.fullscreen = false;
-            if(!System.getProperty("os.name").toLowerCase().contains("linux")) {
-                cfg.addIcon(args[2] + File.separator + "icon.png", Files.FileType.Absolute);
+            if(System.getProperty("jrgss.icon") != null && !System.getProperty("os.name").toLowerCase().contains("linux")) {
+                cfg.addIcon(System.getProperty("jrgss.icon"), Files.FileType.Absolute);
 
             } else {
                 FileUtil.onCaseSensitiveFileSystem = true;
@@ -38,15 +38,15 @@ public class Desktop {
             }
             ConfigReader config = new ConfigReader(args[0] + File.separator + "Game.ini");
             cfg.title = config.getTitle();
-            setDockIconIfOnOSX(args[2] + File.separator + "icon.png");
-            new JRGSSDesktop(new JRGSSGame(args[0], args[1], args[2], config), cfg);
+            setDockIconIfOnOSX(System.getProperty("jrgss.icon"));
+            new JRGSSDesktop(new JRGSSGame(args[0], args[1], config), cfg);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Encountered an unexpected error: "+e.getMessage(),"Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     public static void setDockIconIfOnOSX(String iconFile) {
-        if(System.getProperty("os.name").toLowerCase().contains("mac")) {
+        if(iconFile != null && System.getProperty("os.name").toLowerCase().contains("mac")) {
             try {
                 Class<?> clazz = Class.forName("com.apple.eawt.Application");
                 Method getApplication = clazz.getDeclaredMethod("getApplication");

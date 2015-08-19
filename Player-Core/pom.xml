@@ -12,17 +12,12 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.14.0</version>
-        </dependency>
-        <dependency>
-            <groupId>libgdx</groupId>
-            <artifactId>gdx-sources</artifactId>
-            <version>1.5.3</version>
         </dependency>
         <dependency>
             <groupId>org.jruby</groupId>
@@ -37,12 +32,12 @@
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-freetype</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>libgdx</groupId>
             <artifactId>gdx-controllers</artifactId>
-            <version>1.5.3</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.jetlang</groupId>

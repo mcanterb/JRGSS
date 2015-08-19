@@ -2,6 +2,7 @@ package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.Rectangle;
@@ -75,6 +76,7 @@ public class Viewport extends AbstractRenderable {
 
         if(!tone.isZero()) {
             tempBuffer = Graphics.checkBufferSize(tempBuffer);
+            tempBuffer.getColorBufferTexture().setFilter(Texture.TextureFilter.Nearest,Texture.TextureFilter.Nearest);
             Graphics.tempBuffer.end();
             tempBuffer.begin();
             Gdx.gl20.glClear(GL20.GL_COLOR_BUFFER_BIT);

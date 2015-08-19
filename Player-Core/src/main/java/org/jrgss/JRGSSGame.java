@@ -19,9 +19,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
+import java.net.JarURLConnection;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Created by mcanterb on 6/26/14.
@@ -37,7 +40,6 @@ public class JRGSSGame implements JRGSSApplicationListener {
     public static final Queue<FutureTask<?>> glRunnables = new ConcurrentLinkedQueue<>();
 
     static JRGSSMain mainBlock;
-    static String JRGSS_DIR;
     SpriteBatch batch;
     public static OrthographicCamera camera;
     FPSLogger fpsLogger;
@@ -48,10 +50,9 @@ public class JRGSSGame implements JRGSSApplicationListener {
         return Thread.currentThread() == glThread;
     }
 
-    public JRGSSGame(String gameDirectory, String rtpDirectory, String jrgssDir, ConfigReader ini) {
+    public JRGSSGame(String gameDirectory, String rtpDirectory, ConfigReader ini) {
         super();
         JRGSSGame.ini = ini; //Pretty shitty, but JRGSSGame should be a singleton
-        JRGSSGame.JRGSS_DIR = jrgssDir;
         FileUtil.setLocalDirectory(ini.getTitle());
         RGSSVersion rgss = ini.getRGSSVersion();
         if(rgss != RGSSVersion.VXAce) {
@@ -101,7 +102,10 @@ public class JRGSSGame implements JRGSSApplicationListener {
         if(FileUtil.archive != null) {
             f = FileUtil.archive.openFile(path);
         } else {
-            path = path.replaceAll("\\\\", File.separator);
+            Gdx.app.log("JRGSSGame", "Separator is "+File.separator);
+            if(!File.separator.equals("\\")) {
+                path = path.replaceAll("\\\\", File.separator);
+            }
             f = new FileHandle(FileUtil.gameDirectory + File.separator + path);
         }
         byte[] bytes = f.readBytes();
@@ -119,10 +123,14 @@ public class JRGSSGame implements JRGSSApplicationListener {
             scriptingContainer.put("$__obj", item);
             String str2 = (String)scriptingContainer.runScriptlet("Zlib::Inflate.inflate($__obj[2]).force_encoding(\"utf-8\")");
             try{
-                String script = str2.replaceAll("\r\n","\n");
-                
+                String script = "# encoding: UTF-8\n"+str2;//.replaceAll("\r\n","\n");
+
+               /* try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
+                    writer.write("# encoding: UTF-8\n" + script);
+                }
+                System.out.println("Saving /Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb");*/
                 scriptingContainer.setScriptFilename(name);
-                scriptingContainer.runScriptlet("# encoding: UTF-8\n" + script);
+                scriptingContainer.runScriptlet("# encoding: UTF-8\r\n" + script);
             }catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -133,15 +141,31 @@ public class JRGSSGame implements JRGSSApplicationListener {
 
     public void loadRPGModule() {
         try{
-            String[] files = new File(JRGSS_DIR+File.separator+"rpg").list();
+            String[] files = new File(JRGSSGame.class.getResource("/rpg/").toURI()).list();
             for(String file : files) {
-                InputStream stream = new FileInputStream(new File(JRGSS_DIR+
-                        File.separator+"rpg"+File.separator+file));
+                InputStream stream = JRGSSGame.class.getResourceAsStream("/rpg/"+file);
+
+                        /*new FileInputStream(new File(JRGSS_DIR+
+                        File.separator+"rpg"+File.separator+file));*/
                 scriptingContainer.runScriptlet(stream, file);
                 System.out.println("Loaded file "+file);
             }
         } catch(Exception e) {
-            throw new RuntimeException("Failed to load built in ruby scripts!",e);
+            //We might be in a jar.
+            try {
+                String jarFileLocation = JRGSSGame.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+                JarFile file = new JarFile(jarFileLocation);
+                Enumeration<JarEntry> entries = file.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (entry.getName().startsWith("rpg")) {
+                        scriptingContainer.runScriptlet(file.getInputStream(entry), entry.getName());
+                        System.out.println("Loaded file "+file);
+                    }
+                }
+            }catch(Exception e1) {
+                throw new RuntimeException("Failed to load built in ruby scripts!", e1);
+            }
         }
     }
 

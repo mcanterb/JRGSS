@@ -252,7 +252,7 @@ public class Font extends RubyObject{
                 param.flip = true;
                 param.genMipMaps = true;
                 param.borderColor = com.badlogic.gdx.graphics.Color.WHITE;
-                param.borderWidth = 0.2f + (bold?0.5f:0);
+                param.borderWidth = 0.2f;
 
                 param.magFilter = Texture.TextureFilter.MipMapNearestLinear;
                 param.minFilter = Texture.TextureFilter.MipMapNearestLinear;
@@ -260,7 +260,7 @@ public class Font extends RubyObject{
 
                 param.magFilter = Texture.TextureFilter.MipMapNearestLinear;
                 param.minFilter = Texture.TextureFilter.MipMapNearestLinear;
-                param.borderWidth = 1.2f+ (bold?0.5f:0);
+                param.borderWidth = 1.2f;
                 outlineFont = generator.generateFont(param);
 
                 fontCache.put(new FontCacheKey(size, fontPath, bold), new BitmapFont[]{bitmapFont, outlineFont});

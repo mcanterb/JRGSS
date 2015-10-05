@@ -54,6 +54,8 @@ public class RGSSBuiltinService implements BasicLibraryService {
         Win32API.registerWin32Functions(Kernel32.class);
         Win32API.registerWin32Functions(XInput.class);
         Win32API.registerWin32Functions(User32.class);
+        Win32API.registerWin32Functions(Ole32.class);
+        Win32API.registerWin32Functions(WS232.class);
 
         return true;
     }

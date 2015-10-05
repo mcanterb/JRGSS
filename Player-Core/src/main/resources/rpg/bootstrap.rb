@@ -58,7 +58,6 @@ end
 
 def load_data(filename)
     filename = filename.gsub("\\", Java::JavaIo::File::separator).gsub("/", Java::JavaIo::File::separator)
-    puts 'Loading Data for '+filename
     f = Java::OrgJrgss::FileUtil::rawLoadFile(filename)
     begin
         obj = Marshal.load(f)
@@ -87,7 +86,6 @@ class << Marshal
     if proc
         jrgss_load(port, proc)
     else
-        puts "Getting ready to call load..."
         begin
             obj = jrgss_load(port)
         rescue Exception => e

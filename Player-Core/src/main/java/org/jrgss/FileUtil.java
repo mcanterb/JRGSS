@@ -97,6 +97,14 @@ public class FileUtil {
     }
 
     public static RubyString rawLoadFile(String path) {
+        if(archive != null) {
+            String convertedPath = path.replaceAll("/", "\\\\");
+                FileHandle f = archive.openFile(convertedPath);
+                if( f != null) {
+                    RubyString result = new RubyString(Ruby.getGlobalRuntime(), Ruby.getGlobalRuntime().getString(), f.readBytes());
+                    return result;
+                }
+        }
         if(!File.separator.equals("\\")) {
             path = path.replaceAll("\\\\", File.separator);
         }

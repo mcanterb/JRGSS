@@ -38,12 +38,12 @@ public class EncryptedArchive {
         System.out.println("Offset is "+buffer.position());
         ArchivedFile file;
         while((file = getFileInfoFromTOC(buffer)) != null) {
-            files.put(file.name, file);
+            files.put(file.name.toLowerCase(), file);
         }
     }
 
     public FileHandle openFile(String name) {
-        ArchivedFile f = files.get(name);
+        ArchivedFile f = files.get(name.toLowerCase());
         if(f == null) return null;
         ByteBuffer fileBuffer = buffer.duplicate();
         fileBuffer.position(f.offset);

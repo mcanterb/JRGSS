@@ -1,21 +1,92 @@
 package org.jrgss.api.win32;
 
 import com.badlogic.gdx.Gdx;
+import static com.badlogic.gdx.Input.Keys.*;
+
+import com.badlogic.gdx.Input;
+import com.google.common.collect.ImmutableMap;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.jrgss.JRGSSApplication;
 import org.jrgss.api.Graphics;
 import org.jruby.RubyString;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Map;
+import java.util.function.Function;
 
-import static org.jrgss.JRubyUtil.*;
+import static org.jrgss.api.win32.Win32Util.*;
 
 /**
  * Created by matt on 2/6/15.
  */
 public class User32 {
+
+    interface KeyFunc {
+        short isPressed();
+    }
+
+    static KeyFunc vals(final Integer...vals) {
+        return () -> {
+            if (!((JRGSSApplication)Gdx.app).isFocused()) {
+                return (short)0;
+            }
+            for(int val : vals) {
+                if(Gdx.input.isKeyPressed(val)) return (short)0x8000;
+            }
+            return (short)0;
+        };
+    }
+
+    final static Map<Integer, KeyFunc> keyMappings;
+
+    static {
+        ImmutableMap.Builder<Integer, KeyFunc> builder = ImmutableMap.builder();
+
+        builder.put(0x08, vals(BACKSPACE));
+        builder.put(0x09, vals(TAB));
+        builder.put(0x0C, vals(CLEAR));
+        builder.put(0x0D, vals(ENTER));
+        builder.put(0x10, vals(SHIFT_LEFT, SHIFT_RIGHT));
+        builder.put(0x11, vals(CONTROL_LEFT, CONTROL_RIGHT));
+        builder.put(0x12, vals(ALT_LEFT, ALT_RIGHT));
+        builder.put(0x14, () -> (short)(Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK)?0x1:0x0) );
+        builder.put(0x1B, vals(ESCAPE));
+        builder.put(0x20, vals(SPACE));
+        builder.put(0x21, vals(PAGE_UP));
+        builder.put(0x22, vals(PAGE_DOWN));
+        builder.put(0x23, vals(END));
+        builder.put(0x24, vals(HOME));
+        builder.put(0x25, vals(LEFT));
+        builder.put(0x26, vals(UP));
+        builder.put(0x27, vals(RIGHT));
+        builder.put(0x28, vals(DOWN));
+        builder.put(0x2D, vals(INSERT));
+        builder.put(0x2E, vals(DEL));
+        for(int i = 0; i < 10; i++) {
+            builder.put(0x30+i, vals(NUM_0+i));
+        }
+        for(int i = 0; i < 27; i++) {
+            builder.put(0x41+i, vals(A+i));
+        }
+        builder.put(0xBA, vals(SEMICOLON));
+        builder.put(0xDE, vals(APOSTROPHE));
+        builder.put(0xBE, vals(PERIOD));
+        builder.put(0xBB, vals(EQUALS));
+        builder.put(0xBC, vals(COMMA));
+        builder.put(0xBD, vals(MINUS));
+        builder.put(0xBF, vals(SLASH));
+        builder.put(0xC0, vals(GRAVE));
+        builder.put(0xDB, vals(LEFT_BRACKET));
+        builder.put(0xDD, vals(RIGHT_BRACKET));
+        builder.put(0xDC, vals(BACKSLASH));
+
+
+        keyMappings = builder.build();
+    }
+
 
 
     //SendInput = Win32API.new('user32'  , 'SendInput' , 'ipi' , 'i')
@@ -140,6 +211,15 @@ public class User32 {
         Gdx.app.log("User32", "Unsupported SystemParametersInfo call: "+action);
         return rubyNum(0);
 
+    };
+
+    //Win32API.new("user32","GetKeyState", 'i', 'i')
+    @Win32Function(dll="user32", name="GetKeyState", spec = "i")
+    public static final DLLImpl GetKeyState = (api, context, args) -> {
+        int vk = getInt(args[0]);
+        KeyFunc func = keyMappings.get(vk);
+        if(func == null) return rubyNum(0);
+        return rubyNum(func.isPressed());
     };
 
 

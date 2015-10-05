@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector3;
 import org.jrgss.api.*;
 import org.jrgss.api.Graphics;
+import org.jrgss.api.win32.User32;
 import org.jrgss.rgssa.EncryptedArchive;
 import org.jruby.*;
 import org.jruby.embed.LocalContextScope;
@@ -125,7 +126,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
             try{
                 String script = "# encoding: UTF-8\n"+str2;//.replaceAll("\r\n","\n");
 
-               /* try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
+                /*try(FileWriter writer = new FileWriter("/Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb")) {
                     writer.write("# encoding: UTF-8\n" + script);
                 }
                 System.out.println("Saving /Users/matt/VidarScripts/"+index+"@@__@@"+name+".rb");*/
@@ -154,6 +155,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
             //We might be in a jar.
             try {
                 String jarFileLocation = JRGSSGame.class.getProtectionDomain().getCodeSource().getLocation().getFile();
+                jarFileLocation = jarFileLocation.replace("%20", " ");
                 JarFile file = new JarFile(jarFileLocation);
                 Enumeration<JarEntry> entries = file.entries();
                 while (entries.hasMoreElements()) {
@@ -276,6 +278,7 @@ public class JRGSSGame implements JRGSSApplicationListener {
         loadRPGModule();
         scriptingContainer.put("$_jrgss_home", FileUtil.gameDirectory);
         scriptingContainer.put("$_jrgss_paths", new String[]{FileUtil.localDirectory, FileUtil.gameDirectory});
+        scriptingContainer.put("$_jrgss_os", System.getProperty("os.name"));
         loadScriptData(ini.getScripts());
         //loadScriptsFromDirectory("/Users/matt/VidarScripts");
 

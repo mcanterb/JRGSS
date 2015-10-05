@@ -334,7 +334,6 @@ public class Graphics {
             }
 
             if (brightness != 255) {
-                Gdx.app.log("Graphics", "Brightness is "+brightness);
                 finalBatch.setColor(0f, 0f, 0f, (255f - brightness) / 255f);
                 finalBatch.draw(Sprite.getColorTexture(), x, y,
                         width, height);

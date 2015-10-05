@@ -327,7 +327,7 @@ public class Tilemap {
             //newRegion = new TextureRegion(tilemap, sx, (tilemapHeight - 32) - sy, 32, 32);
 
 
-            int[] autoTilePieces = isWall(id) ? WATERFALL_PIECES[autoId] : AUTOTILE_PARTS[autoId];
+            int[] autoTilePieces = /*isWall(id) ? WATERFALL_PIECES[autoId] :*/ AUTOTILE_PARTS[autoId];
 
             for (int i = 0; i < 4; i++) {
                 batch.draw(tilemap,x+(i % 2) * 16, y + (i / 2) * 16, (autoTilePieces[i] % 4) * 16 + sx, (tilemapHeight - 16) - ((autoTilePieces[i] / 4) * 16 + sy), 16, 16);

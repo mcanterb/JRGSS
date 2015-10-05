@@ -2,12 +2,10 @@ package org.jrgss.api.win32;
 
 import com.badlogic.gdx.Gdx;
 import lombok.Data;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jrgss.JRubyUtil.*;
+import static org.jrgss.api.win32.Win32Util.*;
 
 import java.awt.*;
 import java.io.File;

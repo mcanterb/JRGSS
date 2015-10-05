@@ -534,9 +534,6 @@ public class Bitmap {
             BitmapFont f = font.getBitmapFont();
             BitmapFont outline = font.getOutlineFont();
 
-            if(string.length() == 1) {
-                Gdx.app.log("Bitmap", "Font size is "+font.getSize());
-            }
 
             Color innerColor = font.getColor();
             Color outerColor = font.getOutColor();

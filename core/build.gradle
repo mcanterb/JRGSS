@@ -1,0 +1,18 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+  implementation "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
+  implementation "org.jruby:jruby-complete:9.4.12.0"
+  implementation "org.ini4j:ini4j:0.5.4"
+  implementation "com.google.guava:guava:33.4.5-android"
+  implementation "net.java.dev.jna:jna:5.17.0"
+
+
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+}

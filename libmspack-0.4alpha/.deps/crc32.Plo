@@ -1,3 +1,0 @@
-crc32.lo: mspack/crc32.c mspack/crc32.h
-
-mspack/crc32.h:

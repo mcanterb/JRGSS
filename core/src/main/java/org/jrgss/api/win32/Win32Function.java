@@ -8,9 +8,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface Win32Function {
-   String dll();
+    String dll();
 
-   String name();
+    String name();
 
-   String spec();
+    String spec();
 }

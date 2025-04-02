@@ -3,9 +3,9 @@ package org.jrgss;
 import com.badlogic.gdx.ApplicationListener;
 
 public interface JRGSSApplicationListener extends ApplicationListener {
-   void loadSplashScreen();
+    void loadSplashScreen();
 
-   void loadScripts();
+    void loadScripts();
 
-   JRGSSGame.JRGSSMain getMain();
+    JRGSSGame.JRGSSMain getMain();
 }

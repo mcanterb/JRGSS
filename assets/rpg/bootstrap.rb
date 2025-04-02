@@ -116,3 +116,4 @@ class << Marshal
     end
   end
 end unless Marshal.respond_to?(:jrgss_load)
+

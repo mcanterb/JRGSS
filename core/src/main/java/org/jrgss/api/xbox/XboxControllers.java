@@ -4,16 +4,20 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.math.Vector3;
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Map;
 
 public enum XboxControllers implements ControllerListener {
     INSTANCE;
 
     private Controller currentController;
     private ControllerState state = new ControllerState();
+
+    public static void initialize() {
+        Controllers.addListener(INSTANCE);
+        Gdx.app.log("Controllers", "# of controllers plugged in: " + Controllers.getControllers().size);
+        if (Controllers.getControllers().size > 0) {
+            INSTANCE.currentController = Controllers.getControllers().first();
+        }
+    }
 
     @Override
     public void connected(Controller controller) {
@@ -111,14 +115,6 @@ public enum XboxControllers implements ControllerListener {
                 buttons[XBOXButtons.getButtonFor(pov).getXboxButtonIndex()] = true;
             }
             this.state = this.state.withButtonStates(buttons).withPacket(this.state.getPacket() + 1);
-        }
-    }
-
-    public static void initialize() {
-        Controllers.addListener(INSTANCE);
-        Gdx.app.log("Controllers", "# of controllers plugged in: " + Controllers.getControllers().size);
-        if (Controllers.getControllers().size > 0) {
-            INSTANCE.currentController = Controllers.getControllers().first();
         }
     }
 

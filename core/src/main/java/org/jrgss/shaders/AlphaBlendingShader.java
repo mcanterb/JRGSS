@@ -1,12 +1,13 @@
 package org.jrgss.shaders;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.JrgssBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import org.jrgss.api.Color;
 import org.jrgss.api.Tone;
 
 public class AlphaBlendingShader {
-    private static String vertexShader =
+    private static final String vertexShader =
         "#version 150\n" +
             "in vec4 a_position;\n" +
             "in vec4 a_color;\n" +
@@ -16,12 +17,12 @@ public class AlphaBlendingShader {
             "out vec2 v_texCoords;\n\n" +
             "void main() {\n" +
             "   v_color = a_color;\n" +
-            "   v_color.a = v_color.a * (256.0 / 255.0);\n" +
+            "   v_color.a = v_color.a;\n" +
             "   v_texCoords = a_texCoord0;\n" +
             "   gl_Position =  u_projTrans * a_position;\n" +
             "}\n";
 
-    private static String fragmentShader =
+    private static final String fragmentShader =
         "#version 150\n" +
             "#ifdef GL_ES\n" +
             "#define LOWP lowp\n" +
@@ -47,47 +48,61 @@ public class AlphaBlendingShader {
             "       v_texColor.w\n" +
             "   );\n" +
             "}\n";
-   private static ShaderProgram INSTANCE;
-   private static Tone lastTone;
-   private static Color lastColor;
+    private static ShaderProgram INSTANCE;
+    private static Tone lastTone;
+    private static Color lastColor;
 
-   public static void setTone(Tone t, JrgssBatch batch) {
-      if (!t.equals(lastTone)) {
-         batch.flush();
-         INSTANCE.setUniformf("tone", t.getRed() / 255.0F, t.getGreen() / 255.0F, t.getBlue() / 255.0F, t.getGray() / 255.0F);
-         lastTone = t;
-      }
-   }
+    public static void setTone(Tone t, JrgssBatch batch) {
+        if (t == null) {
+            t = new Tone(0, 0, 0, 0);
+            Gdx.app.error("AlphaBlendingShader", "Tone was null, using default tone");
+        }
+        if (!t.equals(lastTone)) {
+            batch.flush();
+            INSTANCE.setUniformf("tone", t.getRed() / 255.0F, t.getGreen() / 255.0F, t.getBlue() / 255.0F, t.getGray() / 255.0F);
+            lastTone = t;
+        }
+    }
 
-   public static void setBlendColor(Color c, JrgssBatch batch) {
-      if (!c.equals(lastColor)) {
-         batch.flush();
-         INSTANCE.setUniformf("blend_color", c.getRed() / 255.0F, c.getGreen() / 255.0F, c.getBlue() / 255.0F, c.getAlpha() / 255.0F);
-         lastColor = c;
-      }
-   }
+    public static void withToneChange(Tone t, JrgssBatch batch, Runnable r) {
+        Tone old = lastTone;
+        setTone(t, batch);
+        r.run();
+        setTone(old, batch);
+    }
 
-   public static void begin() {
-      INSTANCE.begin();
-      lastColor = null;
-      lastTone = null;
-   }
+    public static void setBlendColor(Color c, JrgssBatch batch) {
+        c = new Color(0, 0, 0, 0);
+        if (!c.equals(lastColor)) {
+            batch.flush();
+            INSTANCE.setUniformf("blend_color", c.getRed() / 255.0F, c.getGreen() / 255.0F, c.getBlue() / 255.0F, c.getAlpha() / 255.0F);
+            lastColor = c;
+        }
+    }
 
-   public static void end() {
-      INSTANCE.end();
-   }
+    public static void begin() {
+        INSTANCE.begin();
+        lastColor = new Color(0, 0, 0, 0);
+        lastTone = new Tone(0, 0, 0, 0);
+    }
 
-   public static ShaderProgram get() {
-      if (INSTANCE == null) {
-         INSTANCE = new ShaderProgram(vertexShader, fragmentShader);
-         if (!INSTANCE.isCompiled()) {
-            throw new IllegalArgumentException("Error compiling shader: " + INSTANCE.getLog());
-         }
+    public static void end() {
+        INSTANCE.end();
+        INSTANCE.setUniformf("tone", 0.0F, 0.0F, 0.0F, 0.0F);
+        INSTANCE.setUniformf("blend_color", 0.0F, 0.0F, 0.0F, 0.0F);
+    }
 
-         INSTANCE.setUniformf("tone", 0.0F, 0.0F, 0.0F, 0.0F);
-         INSTANCE.setUniformf("blend_color", 0.0F, 0.0F, 0.0F, 0.0F);
-      }
+    public static ShaderProgram get() {
+        if (INSTANCE == null) {
+            INSTANCE = new ShaderProgram(vertexShader, fragmentShader);
+            if (!INSTANCE.isCompiled()) {
+                throw new IllegalArgumentException("Error compiling shader: " + INSTANCE.getLog());
+            }
 
-      return INSTANCE;
-   }
+            INSTANCE.setUniformf("tone", 0.0F, 0.0F, 0.0F, 0.0F);
+            INSTANCE.setUniformf("blend_color", 0.0F, 0.0F, 0.0F, 0.0F);
+        }
+
+        return INSTANCE;
+    }
 }

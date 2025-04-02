@@ -13,7 +13,7 @@ public class TransitionShaderProgram extends ShaderProgram {
         + "void main()\n"
         + "{\n"
         + "   v_color = a_color;\n"
-        + "   v_color.a = v_color.a * (256.0/255.0);\n"
+        + "   v_color.a = v_color.a;\n"
         + "   v_texCoords = a_texCoord0;\n"
         + "   gl_Position =  u_projTrans * a_position;\n"
         + "}\n";
@@ -46,28 +46,30 @@ public class TransitionShaderProgram extends ShaderProgram {
         "    );\n" +
         "  }\n" +
         "}";
-   private static TransitionShaderProgram INSTANCE;
+    private static TransitionShaderProgram INSTANCE;
 
-   private TransitionShaderProgram() {
-      super(vertexShader, fragmentShader);
-      if (!this.isCompiled()) {
-         throw new IllegalArgumentException("Error compiling shader: " + this.getLog());
-      }
-   }
+    private TransitionShaderProgram() {
+        super(vertexShader, fragmentShader);
+        if (!this.isCompiled()) {
+            throw new IllegalArgumentException("Error compiling shader: " + this.getLog());
+        }
+    }
 
-   public static TransitionShaderProgram get() {
-      if (INSTANCE == null) {
-         INSTANCE = new TransitionShaderProgram();
-      }
+    public static TransitionShaderProgram get() {
+        if (INSTANCE == null) {
+            INSTANCE = new TransitionShaderProgram();
+            INSTANCE.setUniformf("fade", 0.0F);
+            INSTANCE.setUniformf("vague", 0.0F);
+        }
 
-      return INSTANCE;
-   }
+        return INSTANCE;
+    }
 
-   public void setFade(float fade) {
-      this.setUniformf("fade", fade);
-   }
+    public void setFade(float fade) {
+        this.setUniformf("fade", fade);
+    }
 
-   public void setVague(float vague) {
-      this.setUniformf("vague", vague);
-   }
+    public void setVague(float vague) {
+        this.setUniformf("vague", vague);
+    }
 }

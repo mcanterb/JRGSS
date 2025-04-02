@@ -1,39 +1,35 @@
 package io.github.mcanterb.jrgss.lwjgl3;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.backends.lwjgl3.AbstractJrgssDesktopApplication;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window;
 import com.badlogic.gdx.backends.lwjgl3.audio.OpenALLwjgl3Audio;
+import com.badlogic.gdx.controllers.desktop.support.JamepadControllerMonitor;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.ObjectMap;
 import org.jrgss.AudioUpdateFunction;
 import org.jrgss.JRGSSApplicationListener;
 import org.jrgss.api.Graphics;
+import org.jrgss.api.RGSSTerminate;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
 
 import java.net.JarURLConnection;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 
 public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
+    JRGSSApplicationListener jrgssApplicationListener;
+    int lastWidth;
+    int lastHeight;
+    volatile boolean killAudio = false;
     private boolean running = true;
     private Array<Runnable> runnables = new Array<>();
     private Array<Runnable> executedRunnables = new Array<>();
     private Array<AudioUpdateFunction> audioUpdaters = new Array<>();
-    private Array<Lwjgl3Window> windows = null;
-    JRGSSApplicationListener jrgssApplicationListener;
-    int lastWidth;
-    int lastHeight;
-    private boolean windowed = true;
-    volatile boolean killAudio = false;
-    private AtomicBoolean isFocused = new AtomicBoolean(false);
     Thread audioUpdateThread = new Thread(new Runnable() {
         final Array<AudioUpdateFunction> toRemove = new Array<>();
 
@@ -63,6 +59,8 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
             }
         }
     });
+    private Array<Lwjgl3Window> windows = null;
+    private boolean windowed = true;
 
 
     public JrgssDesktopApplication(JRGSSApplicationListener jrgssApplicationListener, Lwjgl3ApplicationConfiguration config) {
@@ -77,7 +75,6 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
         audioUpdaters = new Array<>();
         windowed = true;
         killAudio = false;
-        isFocused = new AtomicBoolean(false);
         audioUpdateThread = new Thread(new Runnable() {
             final Array<AudioUpdateFunction> toRemove = new Array<>();
 
@@ -128,6 +125,8 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
 
         try {
             this.jrgssApplicationListener.getMain().main();
+        } catch (RGSSTerminate ignored) {
+            Gdx.app.log("JRGSSDesktopApplication", "Termination request received! Terminating now...");
         } catch (Exception e) {
             e.printStackTrace(System.err);
             throw new RuntimeException(e);
@@ -172,22 +171,30 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
             this.audioUpdaters.add(function);
         }
     }
+
     @Override
-    public void postRunnable (Runnable runnable) {
+    public void postRunnable(Runnable runnable) {
         synchronized (this) {
-            runnables.add(runnable);
+            if (runnable instanceof JamepadControllerMonitor && !this.runnables.contains(runnable, false)) {
+                runnables.add(runnable);
+            }
         }
     }
 
     @Override
-    public com.badlogic.gdx.Graphics getGraphics () {
+    public com.badlogic.gdx.Graphics getGraphics() {
         return getWindowGraphics(getCurrentWindow());
     }
 
     @Override
     public void handlePlatform() {
+        if (windows.size == 0) {
+            GLFW.glfwPollEvents();
+            throw new RGSSTerminate();
+        }
         if (windows.size != 1) {
-            Gdx.app.error("JRGSSDesktopApplication", "JRGSS Applications cannot have more than 1 window!");
+            Gdx.app.error("JRGSSDesktopApplication", "JRGSS Applications cannot have more than 1 window! Terminating...");
+            throw new RGSSTerminate();
         }
         Lwjgl3Window window = windows.first();
         synchronized (this) {
@@ -244,9 +251,14 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
 
             if (shouldClose(window)) {
                 windows.removeValue(window, false);
+                if (windows.size == 0) {
+                    running = false;
+                    throw new RGSSTerminate();
+                }
+                GLFW.glfwPollEvents();
             }
 
-            sync();
+            if (running) sync();
         }
     }
 
@@ -262,6 +274,7 @@ public class JrgssDesktopApplication extends AbstractJrgssDesktopApplication {
     public int getLastHeight() {
         return this.lastHeight;
     }
+
     @Override
     public int hashCode() {
         return System.identityHashCode(this);

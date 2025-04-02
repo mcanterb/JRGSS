@@ -31,46 +31,46 @@ public class TextShaderProgram extends ShaderProgram {
             "  gl_FragColor = v_color * tex_color;\n" +
             "  gl_FragColor.w = gl_FragColor.w * 1.3;\n" +
             "}";
-   private static TextShaderProgram INSTANCE;
+    private static TextShaderProgram INSTANCE;
 
-   private TextShaderProgram() {
-      super(vertexShader, fragmentShader);
-      if (!isCompiled()) {
-         throw new IllegalArgumentException("Error compiling shader: " + this.getLog());
-      }
-   }
+    private TextShaderProgram() {
+        super(vertexShader, fragmentShader);
+        if (!isCompiled()) {
+            throw new IllegalArgumentException("Error compiling shader: " + this.getLog());
+        }
+    }
 
-   public static TextShaderProgram get() {
-      if (INSTANCE == null) {
-         INSTANCE = new TextShaderProgram();
-      }
+    public static TextShaderProgram get() {
+        if (INSTANCE == null) {
+            INSTANCE = new TextShaderProgram();
+        }
 
-      return INSTANCE;
-   }
+        return INSTANCE;
+    }
 
-   @Override
-   public boolean equals(Object o) {
-      if (o == this) {
-         return true;
-      } else if (!(o instanceof TextShaderProgram)) {
-         return false;
-      } else {
-         TextShaderProgram other = (TextShaderProgram)o;
-         return other.canEqual(this);
-      }
-   }
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        } else if (!(o instanceof TextShaderProgram)) {
+            return false;
+        } else {
+            TextShaderProgram other = (TextShaderProgram) o;
+            return other.canEqual(this);
+        }
+    }
 
-   protected boolean canEqual(Object other) {
-      return other instanceof TextShaderProgram;
-   }
+    protected boolean canEqual(Object other) {
+        return other instanceof TextShaderProgram;
+    }
 
-   @Override
-   public int hashCode() {
-      return 1;
-   }
+    @Override
+    public int hashCode() {
+        return 1;
+    }
 
-   @Override
-   public String toString() {
-      return "TextShaderProgram()";
-   }
+    @Override
+    public String toString() {
+        return "TextShaderProgram()";
+    }
 }

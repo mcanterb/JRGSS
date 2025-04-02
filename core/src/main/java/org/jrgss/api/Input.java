@@ -1,6 +1,7 @@
 package org.jrgss.api;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.Controllers;
 import org.jrgss.JRGSSApplication;
@@ -20,12 +21,6 @@ import java.util.Map.Entry;
     name = {"Input"}
 )
 public class Input extends RubyObject {
-    static Ruby runtime;
-    static RubyModule rubyClass;
-    static Map<Integer, Boolean> triggerStatus = new HashMap<>();
-    static Map<Integer, Boolean> repeatStatus = new HashMap<>();
-    static Map<Integer, Long> repeatTimestamps = new HashMap<>();
-    static Map<Integer, Boolean> isPressed = new HashMap<>();
     @JRubyConstant
     public static final String DOWN = "DOWN";
     @JRubyConstant
@@ -66,103 +61,39 @@ public class Input extends RubyObject {
     public static final String F8 = "F8";
     @JRubyConstant
     public static final String F9 = "F9";
+    public static final int VK_FULLSCREEN = Integer.MAX_VALUE;
+    public static final int VK_FULLSCREEN_COMBO_ALT = Integer.MAX_VALUE - 1;
+    public static final int VK_FULLSCREEN_COMBO_ENTER = Integer.MAX_VALUE - 2;
     private static final HashMap<String, int[]> bindings = new HashMap<>();
-    private static final int[] KEYS = new int[]{
-        62,
-        75,
-        55,
-        56,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        74,
-        70,
-        29,
-        30,
-        31,
-        32,
-        33,
-        34,
-        35,
-        36,
-        37,
-        38,
-        39,
-        40,
-        41,
-        42,
-        43,
-        44,
-        45,
-        46,
-        47,
-        48,
-        49,
-        50,
-        51,
-        52,
-        53,
-        54,
-        71,
-        73,
-        72,
-        68,
-        131,
-        66,
-        61,
-        67,
-        133,
-        112,
-        22,
-        21,
-        20,
-        19,
-        92,
-        93,
-        3,
-        132,
-        244,
-        245,
-        246,
-        247,
-        248,
-        249,
-        250,
-        251,
-        252,
-        253,
-        254,
-        255,
-        144,
-        145,
-        146,
-        147,
-        148,
-        149,
-        150,
-        151,
-        152,
-        153,
-        76,
-        17,
-        69,
-        81,
-        59,
-        129,
-        57,
-        63,
-        60,
-        130,
-        58,
-        82
-    };
+    static Ruby runtime;
+    static RubyModule rubyClass;
+    static Map<Integer, Boolean> triggerStatus = new HashMap<>();
+    static Map<Integer, Boolean> repeatStatus = new HashMap<>();
+    static Map<Integer, Long> repeatTimestamps = new HashMap<>();
+    static Map<Integer, Boolean> isPressed = new HashMap<>();
+
+    static {
+        bindings.put(DOWN, new int[]{Keys.DOWN, XBOXButtons.DOWN.key()});
+        bindings.put(LEFT, new int[]{Keys.LEFT, XBOXButtons.LEFT.key()});
+        bindings.put(RIGHT, new int[]{Keys.RIGHT, XBOXButtons.RIGHT.key()});
+        bindings.put(UP, new int[]{Keys.UP, XBOXButtons.UP.key()});
+        bindings.put(C, new int[]{Keys.ENTER, Keys.SPACE, Keys.Z, XBOXButtons.A.key()});
+        bindings.put(B, new int[]{Keys.ESCAPE, Keys.X, Keys.NUM_0, XBOXButtons.B.key()});
+        bindings.put(L, new int[]{Keys.Q, XBOXButtons.LBUMP.key()});
+        bindings.put(R, new int[]{Keys.W, XBOXButtons.RBUMP.key()});
+        bindings.put(X, new int[]{Keys.A, XBOXButtons.X.key()});
+        bindings.put(Y, new int[]{Keys.S, XBOXButtons.Y.key()});
+        bindings.put(Z, new int[]{Keys.D, XBOXButtons.START.key()});
+        bindings.put(A, new int[]{Keys.SHIFT_LEFT, Keys.SHIFT_RIGHT});
+        bindings.put(SHIFT, new int[]{Keys.SHIFT_LEFT, Keys.SHIFT_RIGHT});
+        bindings.put(ALT, new int[]{Keys.ALT_LEFT, Keys.ALT_RIGHT});
+        bindings.put(CTRL, new int[]{Keys.CONTROL_LEFT, Keys.CONTROL_RIGHT});
+        bindings.put(F5, new int[]{Keys.F5});
+        bindings.put(F6, new int[]{Keys.F6});
+        bindings.put(F7, new int[]{Keys.F7});
+        bindings.put(F8, new int[]{Keys.F8});
+        bindings.put(F9, new int[]{Keys.F9});
+    }
 
     public Input(Ruby runtime, RubyClass metaClass) {
         super(runtime, metaClass);
@@ -196,8 +127,14 @@ public class Input extends RubyObject {
         module = true
     )
     public static void update(IRubyObject self) {
+        boolean isAltPressed = Gdx.input.isKeyPressed(Keys.ALT_RIGHT) || Gdx.input.isKeyPressed(Keys.ALT_LEFT);
+        boolean isEnterPressed = Gdx.input.isKeyPressed(Keys.ENTER);
+        boolean isFullScreenPressed = isAltPressed && isEnterPressed;
         if (((JRGSSApplication) Gdx.app).isFocused()) {
-            for (int i : KEYS) {
+            for (int i = 0; i < 256; i++) {
+                if (i == Keys.ENTER && ((isPressed.get(VK_FULLSCREEN) != null && isPressed.get(VK_FULLSCREEN)) || isFullScreenPressed)) {
+                    continue;
+                }
                 Boolean previous = isPressed.get(i);
                 if (previous == null) {
                     previous = Boolean.FALSE;
@@ -270,6 +207,23 @@ public class Input extends RubyObject {
         return RubyBoolean.newBoolean(context.getRuntime(), result);
     }
 
+    public static boolean isFullscreenTriggered() {
+        boolean isAltPressed = Gdx.input.isKeyPressed(Keys.ALT_RIGHT) || Gdx.input.isKeyPressed(Keys.ALT_LEFT);
+        boolean isEnterPressed = Gdx.input.isKeyPressed(Keys.ENTER);
+        boolean isFullScreenPressed = isAltPressed && isEnterPressed;
+        boolean previousFullScreenPressed = isPressed.get(VK_FULLSCREEN) != null && isPressed.get(VK_FULLSCREEN);
+        if(isFullScreenPressed) {
+            updateKey(VK_FULLSCREEN, true, previousFullScreenPressed);
+        } else if(previousFullScreenPressed && !isEnterPressed) {
+            updateKey(VK_FULLSCREEN, false, true);
+        } else if(previousFullScreenPressed) {
+            updateKey(VK_FULLSCREEN, true, true);
+        } else {
+            updateKey(VK_FULLSCREEN, false, false);
+        }
+        return triggerStatus.get(VK_FULLSCREEN) != null && triggerStatus.get(VK_FULLSCREEN);
+    }
+
     public static boolean isTrigger(String sym) {
         for (int i : convertSymToKey(sym)) {
             Boolean result = triggerStatus.get(i);
@@ -335,28 +289,5 @@ public class Input extends RubyObject {
     private static int[] convertSymToKey(String sym) {
         int[] ret = bindings.get(sym);
         return ret != null ? ret : new int[]{0};
-    }
-
-    static {
-        bindings.put("DOWN", new int[]{20, XBOXButtons.DOWN.key()});
-        bindings.put("LEFT", new int[]{21, XBOXButtons.LEFT.key()});
-        bindings.put("RIGHT", new int[]{22, XBOXButtons.RIGHT.key()});
-        bindings.put("UP", new int[]{19, XBOXButtons.UP.key()});
-        bindings.put("C", new int[]{66, XBOXButtons.A.key()});
-        bindings.put("B", new int[]{131, XBOXButtons.B.key()});
-        bindings.put("L", new int[]{45, XBOXButtons.LBUMP.key()});
-        bindings.put("R", new int[]{51, XBOXButtons.RBUMP.key()});
-        bindings.put("X", new int[]{29, XBOXButtons.X.key()});
-        bindings.put("Y", new int[]{47, XBOXButtons.Y.key()});
-        bindings.put("Z", new int[]{32, XBOXButtons.START.key()});
-        bindings.put("A", new int[]{59, 60});
-        bindings.put("SHIFT", new int[]{59, 60});
-        bindings.put("ALT", new int[]{57, 58});
-        bindings.put("CTRL", new int[]{129, 130});
-        bindings.put("F5", new int[]{248});
-        bindings.put("F6", new int[]{249});
-        bindings.put("F7", new int[]{250});
-        bindings.put("F8", new int[]{251});
-        bindings.put("F9", new int[]{252});
     }
 }

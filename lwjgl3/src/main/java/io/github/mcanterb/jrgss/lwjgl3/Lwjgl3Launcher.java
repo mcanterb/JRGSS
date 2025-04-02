@@ -16,7 +16,9 @@ import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import java.io.*;
 
-/** Launches the desktop (LWJGL3) application. */
+/**
+ * Launches the desktop (LWJGL3) application.
+ */
 public class Lwjgl3Launcher {
     public static void main(String[] args) {
         if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
@@ -38,8 +40,8 @@ public class Lwjgl3Launcher {
         try {
             ns = parser.parseArgs(args);
         } catch (ArgumentParserException e) {
-            StringWriter out    = new StringWriter();
-            PrintWriter  writer = new PrintWriter(out);
+            StringWriter out = new StringWriter();
+            PrintWriter writer = new PrintWriter(out);
             parser.handleError(e, writer);
             TinyFileDialogs.tinyfd_messageBox("Error", out.toString(), "ok", "error", true);
             System.exit(0);
@@ -55,7 +57,7 @@ public class Lwjgl3Launcher {
             Lwjgl3ApplicationConfiguration cfg = new Lwjgl3ApplicationConfiguration();
             cfg.setWindowIcon("logo.png");
             cfg.setTitle("JRGSS");
-            cfg.setWindowedMode(800, 450);
+            cfg.setWindowedMode(640, 480);
             cfg.setHdpiMode(HdpiMode.Pixels);
             cfg.setResizable(false);
             if (System.getProperty("jrgss.icon") != null &&
@@ -97,8 +99,8 @@ public class Lwjgl3Launcher {
     }
 
 
-   private static String rtpDir(String providedRtpDir) {
-      //TODO: Try to detect RTP and if it doesn't exist, install it.
-      return providedRtpDir;
-   }
+    private static String rtpDir(String providedRtpDir) {
+        //TODO: Try to detect RTP and if it doesn't exist, install it.
+        return providedRtpDir;
+    }
 }

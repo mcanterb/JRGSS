@@ -34,6 +34,7 @@ dependencies {
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
   implementation "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
   implementation "net.sourceforge.argparse4j:argparse4j:0.9.0"
+  implementation "org.jruby:jruby-complete:9.4.12.0"
   implementation "org.lwjgl:lwjgl-tinyfd:3.3.3"
   implementation "org.lwjgl:lwjgl-tinyfd:3.3.3:natives-linux"
 
@@ -136,7 +137,7 @@ construo {
         architecture.set(Target.Architecture.AARCH64)
         jdkUrl.set("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_aarch64_mac_hotspot_17.0.12_7.tar.gz")
         // macOS needs an identifier
-        identifier.set("io.github.some_example_name." + appName)
+        identifier.set("io.github.mcanterb.jrgss." + appName)
         // Optional: icon for macOS
         macIcon.set(project.file("icons/logo.icns"))
       }
@@ -144,7 +145,7 @@ construo {
         architecture.set(Target.Architecture.X86_64)
         jdkUrl.set("https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz")
         // macOS needs an identifier
-        identifier.set("io.github.some_example_name." + appName)
+        identifier.set("io.github.mcanterb.jrgss." + appName)
         // Optional: icon for macOS
         macIcon.set(project.file("icons/logo.icns"))
       }
@@ -154,6 +155,14 @@ construo {
         // Uncomment the next line to show a console when the game runs, to print messages.
         //useConsole.set(true)
       }
+    }
+    jlink {
+      // add arbitrary modules to be included when running jlink
+      modules.addAll("java.base", "jdk.unsupported", "java.logging", "java.management")
+      // guess the modules from the jar using jdeps, defaults to true
+      guessModulesFromJar.set(false)
+      // include default crypto modules, defaults to true
+      includeDefaultCryptoModules.set(false)
     }
 }
 
